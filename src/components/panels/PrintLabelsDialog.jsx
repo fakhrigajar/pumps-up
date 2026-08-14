@@ -19,7 +19,14 @@ const DASH = "—";
 const inRange = (value) =>
   Number.isFinite(value) && value >= LABEL_MIN_MM && value <= LABEL_MAX_MM;
 
-export function PrintLabelsDialog({ products, labelLayout, onCancel, onPrint }) {
+/**
+ * `template` is the saved design — what is on a label and where. The dialog
+ * does not touch it; the only thing it can change is the stock the design is
+ * printed on, because that is a property of the printer that is loaded right
+ * now rather than of the design. Everything else is settled in the label
+ * designer, so a print run is a matter of quantities.
+ */
+export function PrintLabelsDialog({ products, template, onCancel, onPrint }) {
   const { t } = useTranslation();
   // Stock is the count that is usually wanted — a delivery lands and every
   // unit of it needs a tag — so it is what the field opens on. Nothing holds
@@ -30,10 +37,10 @@ export function PrintLabelsDialog({ products, labelLayout, onCancel, onPrint }) 
     ),
   );
   const [size, setSize] = useState(() => ({
-    width: String(labelLayout.width),
-    height: String(labelLayout.height),
+    width: String(template.width),
+    height: String(template.height),
   }));
-  const [rotate, setRotate] = useState(labelLayout.rotate);
+  const [rotate, setRotate] = useState(template.rotate);
   const [error, setError] = useState(null);
 
   const parsed = products.map((product) => {
@@ -87,7 +94,7 @@ export function PrintLabelsDialog({ products, labelLayout, onCancel, onPrint }) 
       jobs: parsed
         .filter((line) => line.quantity > 0)
         .map((line) => ({ product: line.product, quantity: line.quantity })),
-      layout: { width, height, rotate },
+      template: { ...template, width, height, rotate },
     });
   }
 
@@ -133,10 +140,14 @@ export function PrintLabelsDialog({ products, labelLayout, onCancel, onPrint }) 
               <p className="w-full text-[11.5px] text-ink-3">
                 {t("prn.sizeHint")}
               </p>
+              <p className="w-full text-[11.5px] text-ink-3">
+                {t("prn.designHint")}
+              </p>
             </div>
 
             <LabelPreview
               product={products[0]}
+              template={template}
               width={Number(size.width)}
               height={Number(size.height)}
               rotated={rotate}
@@ -242,11 +253,12 @@ const PREVIEW_MAX_H = 150;
 
 /**
  * The label at its real proportions, scaled to fit a corner of the dialog.
- * It is the same `Label` the printer gets, so a design that comes out turned
- * the wrong way round can be seen turning here first, before a roll of stock
- * is spent finding out.
+ * It is the same `Label` the printer gets, drawn from the saved design with
+ * the stock this job is going onto — so a design that comes out turned the
+ * wrong way round, or crowded onto smaller stock, can be seen here first,
+ * before a roll of it is spent finding out.
  */
-function LabelPreview({ product, width, height, rotated }) {
+function LabelPreview({ product, template, width, height, rotated }) {
   const { t } = useTranslation();
   if (!product || !inRange(width) || !inRange(height)) return null;
 
@@ -262,15 +274,13 @@ function LabelPreview({ product, width, height, rotated }) {
     <figure className="shrink-0">
       <div
         className="label-preview rounded border border-line"
-        style={{
-          width: pixelWidth * scale,
-          height: pixelHeight * scale,
-          "--label-w": `${width}mm`,
-          "--label-h": `${height}mm`,
-        }}
+        style={{ width: pixelWidth * scale, height: pixelHeight * scale }}
       >
         <div style={{ transform: `scale(${scale})`, transformOrigin: "top left" }}>
-          <Label product={product} rotated={rotated} />
+          <Label
+            product={product}
+            template={{ ...template, width, height, rotate: rotated }}
+          />
         </div>
       </div>
       <figcaption className="mt-1 text-center text-[11px] tabular-nums text-ink-3">

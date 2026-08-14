@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Label } from "./Label";
-import { DEFAULT_LABEL_LAYOUT } from "../../lib/labels";
+import { DEFAULT_TEMPLATE } from "../../lib/labelTemplate";
 
 /** Marks the document while labels are mounted, so a plain Ctrl+P with nothing
  * to print still prints the page rather than an empty sheet. */
@@ -14,7 +14,7 @@ const PRINTING_CLASS = "printing-labels";
  * say about paper, so printing swaps it out entirely rather than trying to
  * restyle it. See the print block in index.css.
  */
-export function LabelSheet({ jobs, layout = DEFAULT_LABEL_LAYOUT }) {
+export function LabelSheet({ jobs, template = DEFAULT_TEMPLATE }) {
   const active = Boolean(jobs && jobs.length > 0);
 
   useEffect(() => {
@@ -37,21 +37,15 @@ export function LabelSheet({ jobs, layout = DEFAULT_LABEL_LAYOUT }) {
         is `rotate`'s job, because the paper in the printer cannot turn.
         The style element is inert on screen: @page only applies to print.
       */}
-      <style>{`@page { size: ${layout.width}mm ${layout.height}mm; margin: 0; }`}</style>
+      <style>{`@page { size: ${template.width}mm ${template.height}mm; margin: 0; }`}</style>
 
-      <div
-        className="label-sheet"
-        style={{
-          "--label-w": `${layout.width}mm`,
-          "--label-h": `${layout.height}mm`,
-        }}
-      >
+      <div className="label-sheet">
         {jobs.flatMap(({ product, quantity }) =>
           Array.from({ length: quantity }, (_, index) => (
             <Label
               key={`${product.sku}-${index}`}
               product={product}
-              rotated={layout.rotate}
+              template={template}
             />
           )),
         )}

@@ -10,22 +10,24 @@ import {
 } from "../components/panels/ProductDialogs";
 import { PrintLabelsDialog } from "../components/panels/PrintLabelsDialog";
 import { LabelSheet } from "../components/panels/LabelSheet";
-import { DEFAULT_LABEL_LAYOUT } from "../lib/labels";
 import { filterProducts } from "../data/erp";
+import { useLabelTemplate } from "../labels/context";
 import { useTranslation } from "../i18n/context";
 
 export function Inventory({ products, onAdd, onUpdate, onDelete, onReturn }) {
   const { t } = useTranslation();
+  // The design saved in Tools → label designer, which is what every label
+  // printed from this page is drawn with. Nothing here has to be set up first:
+  // until somebody designs one, this is the default template.
+  const { template } = useLabelTemplate();
   const [query, setQuery] = useState("");
   const [selectedSku, setSelectedSku] = useState(null);
   const [dialog, setDialog] = useState(null);
   const [editingSku, setEditingSku] = useState(null);
   const [checkedSkus, setCheckedSkus] = useState(() => new Set());
-  const [printJobs, setPrintJobs] = useState(null);
-  // Kept on the page rather than in the dialog so the size and the way the
-  // design sits on it carry over to the next print — a shop buys one size of
-  // label stock, loads it one way round, and stays there.
-  const [labelLayout, setLabelLayout] = useState(DEFAULT_LABEL_LAYOUT);
+  // What is being printed, and the template it is being printed with: the
+  // saved design, on whatever stock the dialog was told is in the printer.
+  const [printRun, setPrintRun] = useState(null);
 
   const filtered = useMemo(
     () => filterProducts(products, query),
@@ -74,9 +76,9 @@ export function Inventory({ products, onAdd, onUpdate, onDelete, onReturn }) {
   }, [filtered]);
 
   useEffect(() => {
-    if (!printJobs) return undefined;
+    if (!printRun) return undefined;
 
-    const done = () => setPrintJobs(null);
+    const done = () => setPrintRun(null);
     window.addEventListener("afterprint", done);
     // One frame, so the labels are laid out before the print dialog samples
     // the page. The cleanup cancels it, which is also what keeps StrictMode's
@@ -87,7 +89,7 @@ export function Inventory({ products, onAdd, onUpdate, onDelete, onReturn }) {
       window.removeEventListener("afterprint", done);
       cancelAnimationFrame(frame);
     };
-  }, [printJobs]);
+  }, [printRun]);
 
   function closeDialog() {
     setDialog(null);
@@ -218,17 +220,16 @@ export function Inventory({ products, onAdd, onUpdate, onDelete, onReturn }) {
       {dialog === "print" && checkedProducts.length > 0 ? (
         <PrintLabelsDialog
           products={checkedProducts}
-          labelLayout={labelLayout}
+          template={template}
           onCancel={closeDialog}
-          onPrint={({ jobs, layout }) => {
-            setLabelLayout(layout);
-            setPrintJobs(jobs);
+          onPrint={(run) => {
+            setPrintRun(run);
             closeDialog();
           }}
         />
       ) : null}
 
-      <LabelSheet jobs={printJobs} layout={labelLayout} />
+      <LabelSheet jobs={printRun?.jobs} template={printRun?.template} />
     </div>
   );
 }

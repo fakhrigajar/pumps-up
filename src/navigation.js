@@ -5,6 +5,7 @@ import {
   IconReports,
   IconSales,
   IconSettings,
+  IconTools,
   IconUsers,
 } from './components/Icons'
 
@@ -26,6 +27,7 @@ export const NAV_SECTIONS = [
       { id: 'reports', labelKey: 'nav.reports', Icon: IconReports },
       { id: 'activity', labelKey: 'nav.activity', Icon: IconActivity },
       { id: 'users', labelKey: 'nav.users', Icon: IconUsers },
+      { id: 'tools', labelKey: 'nav.tools', Icon: IconTools },
     ],
   },
 ]

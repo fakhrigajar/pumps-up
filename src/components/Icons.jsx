@@ -248,6 +248,55 @@ export const IconReturn = (p) => (
   </Icon>
 )
 
+export const IconTools = (p) => (
+  <Icon {...p}>
+    <path d="M17.9 3.1a4.6 4.6 0 0 0-5.6 6.2l-8.1 8.1a2.1 2.1 0 0 0 3 3l8.1-8.1a4.6 4.6 0 0 0 6.2-5.6l-2.9 2.9-2.7-.7-.7-2.7z" />
+  </Icon>
+)
+
+export const IconTag = (p) => (
+  <Icon {...p}>
+    <path d="M3.5 10.2V5.5a2 2 0 0 1 2-2h4.7c.5 0 1 .2 1.4.6l8 8a2 2 0 0 1 0 2.8l-4.7 4.7a2 2 0 0 1-2.8 0l-8-8a2 2 0 0 1-.6-1.4Z" />
+    <circle cx="7.9" cy="7.9" r="1.3" />
+  </Icon>
+)
+
+export const IconAlignLeft = (p) => (
+  <Icon {...p}>
+    <path d="M4 6h16M4 10h10M4 14h16M4 18h10" />
+  </Icon>
+)
+
+export const IconAlignCenter = (p) => (
+  <Icon {...p}>
+    <path d="M4 6h16M7 10h10M4 14h16M7 18h10" />
+  </Icon>
+)
+
+export const IconAlignRight = (p) => (
+  <Icon {...p}>
+    <path d="M4 6h16M10 10h10M4 14h16M10 18h10" />
+  </Icon>
+)
+
+export const IconAlignTop = (p) => (
+  <Icon {...p}>
+    <path d="M6 4v16M10 4v10M14 4v16M18 4v10" />
+  </Icon>
+)
+
+export const IconAlignMiddle = (p) => (
+  <Icon {...p}>
+    <path d="M6 4v16M10 7v10M14 4v16M18 7v10" />
+  </Icon>
+)
+
+export const IconAlignBottom = (p) => (
+  <Icon {...p}>
+    <path d="M6 4v16M10 10v10M14 4v16M18 10v10" />
+  </Icon>
+)
+
 export const IconTable = (p) => (
   <Icon {...p}>
     <rect x="3" y="4.5" width="18" height="15" rx="2" />

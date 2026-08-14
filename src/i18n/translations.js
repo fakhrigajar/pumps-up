@@ -9,6 +9,7 @@ export const en = {
   "nav.reports": "Reports",
   "nav.activity": "Activity",
   "nav.users": "Users",
+  "nav.tools": "Tools",
   "nav.settings": "Settings",
   "nav.main": "Main navigation",
   "nav.open": "Open navigation",
@@ -305,6 +306,8 @@ export const en = {
   "prn.preview": "{width} × {height} mm",
   "prn.sizeHint":
     "Width and height are the page sent to the printer, and must match the stock set in its driver — a size the driver cannot produce comes back padded out to a bigger sheet. Rotating turns the design without changing the page.",
+  "prn.designHint":
+    "What the label carries, and where each piece of it sits, comes from the label designer in Tools.",
   "prn.hint":
     "Quantities open at what is on hand and are not capped by it — print as many labels as the job needs. A quantity of 0 skips that product.",
   "prn.total_one": "{count} label",
@@ -315,6 +318,58 @@ export const en = {
   "err.printJob":
     "One print job holds up to {max} labels. Lower the quantities, or print the rest in a second run.",
   "err.labelSize": "Label width and height must be between {min} and {max} mm.",
+
+  "tools.desc":
+    "Set up what the rest of the shop produces. A tool is configured once here, and every screen that prints or exports follows it.",
+  "tools.back": "All tools",
+  "tools.labelDesigner": "Label designer",
+  "tools.labelDesigner.desc":
+    "Lay out the barcode label printed from Inventory.",
+
+  "lbl.section.label": "Label",
+  "lbl.section.elements": "Elements",
+  "lbl.margin": "Margin (mm)",
+  "lbl.storeName": "Store name",
+  "lbl.el.logo": "Store logo",
+  "lbl.el.store": "Store name",
+  "lbl.el.name": "Product name",
+  "lbl.el.barcode": "Barcode",
+  "lbl.el.code": "Barcode number",
+  "lbl.el.price": "Price",
+  "lbl.show": "Show {name}",
+  "lbl.move": "{name} — drag to move, arrow keys to nudge",
+  "lbl.hidden": "Hidden — this element is not printed.",
+  "lbl.x": "X (%)",
+  "lbl.y": "Y (%)",
+  "lbl.w": "Width (%)",
+  "lbl.h": "Height (%)",
+  "lbl.fontSize": "Font size (pt)",
+  "lbl.lineHeight": "Line spacing",
+  "lbl.fontWeight": "Font weight",
+  "lbl.weight.400": "Regular",
+  "lbl.weight.500": "Medium",
+  "lbl.weight.600": "Semibold",
+  "lbl.weight.700": "Bold",
+  "lbl.snap": "Align on the label",
+  "lbl.align": "Alignment",
+  "lbl.align.left": "Left",
+  "lbl.align.center": "Center",
+  "lbl.align.right": "Right",
+  "lbl.align.top": "Top",
+  "lbl.align.middle": "Middle",
+  "lbl.align.bottom": "Bottom",
+  "lbl.barcodeHint":
+    "The bars fill the box they are given — drag a handle to make the symbol taller, wider or narrower.",
+  "lbl.logoHint":
+    "The logo keeps its proportions inside its box, and alignment decides where it sits in the room left over.",
+  "lbl.dragHint":
+    "Drag an element to move it, a handle to resize it. Arrow keys nudge the selection.",
+  "lbl.save": "Save design",
+  "lbl.reset": "Reset to default",
+  "lbl.discard": "Discard changes",
+  "lbl.saved": "Saved — labels printed from Inventory use this design.",
+  "lbl.unsaved": "Unsaved changes",
+  "lbl.sample": "Sample product",
 };
 
 export const ru = {
@@ -327,6 +382,7 @@ export const ru = {
   "nav.reports": "Отчёты",
   "nav.activity": "Активность",
   "nav.users": "Пользователи",
+  "nav.tools": "Инструменты",
   "nav.settings": "Настройки",
   "nav.main": "Основная навигация",
   "nav.open": "Открыть меню",
@@ -635,6 +691,8 @@ export const ru = {
   "prn.preview": "{width} × {height} мм",
   "prn.sizeHint":
     "Ширина и высота — это страница, отправляемая на принтер; она должна совпадать с размером носителя в его драйвере, иначе лист дополняется пустым полем до большего размера. Поворот разворачивает макет, не меняя страницу.",
+  "prn.designHint":
+    "Что напечатано на этикетке и где именно — задаётся в дизайнере этикеток, в разделе «Инструменты».",
   "prn.hint":
     "Количество подставляется по остатку и не ограничено им — печатайте столько этикеток, сколько нужно. Значение 0 пропускает товар.",
   "prn.total_one": "{count} этикетка",
@@ -647,6 +705,58 @@ export const ru = {
   "err.printJob":
     "За одну печать — не более {max} этикеток. Уменьшите количество или напечатайте остальное вторым заходом.",
   "err.labelSize": "Ширина и высота этикетки — от {min} до {max} мм.",
+
+  "tools.desc":
+    "Настройка того, что формируют остальные разделы. Инструмент настраивается один раз, и каждый экран, который печатает или выгружает, следует этой настройке.",
+  "tools.back": "Все инструменты",
+  "tools.labelDesigner": "Дизайнер этикеток",
+  "tools.labelDesigner.desc":
+    "Макет этикетки со штрихкодом, которая печатается со «Склада».",
+
+  "lbl.section.label": "Этикетка",
+  "lbl.section.elements": "Элементы",
+  "lbl.margin": "Поля (мм)",
+  "lbl.storeName": "Название магазина",
+  "lbl.el.logo": "Логотип магазина",
+  "lbl.el.store": "Название магазина",
+  "lbl.el.name": "Название товара",
+  "lbl.el.barcode": "Штрихкод",
+  "lbl.el.code": "Номер штрихкода",
+  "lbl.el.price": "Цена",
+  "lbl.show": "Показывать «{name}»",
+  "lbl.move": "{name} — перетащите, чтобы переместить; стрелки сдвигают по шагу",
+  "lbl.hidden": "Скрыт — этот элемент не печатается.",
+  "lbl.x": "X (%)",
+  "lbl.y": "Y (%)",
+  "lbl.w": "Ширина (%)",
+  "lbl.h": "Высота (%)",
+  "lbl.fontSize": "Размер шрифта (пт)",
+  "lbl.lineHeight": "Межстрочный интервал",
+  "lbl.fontWeight": "Начертание",
+  "lbl.weight.400": "Обычное",
+  "lbl.weight.500": "Среднее",
+  "lbl.weight.600": "Полужирное",
+  "lbl.weight.700": "Жирное",
+  "lbl.snap": "Выровнять на этикетке",
+  "lbl.align": "Выравнивание",
+  "lbl.align.left": "По левому краю",
+  "lbl.align.center": "По центру",
+  "lbl.align.right": "По правому краю",
+  "lbl.align.top": "По верхнему краю",
+  "lbl.align.middle": "По середине",
+  "lbl.align.bottom": "По нижнему краю",
+  "lbl.barcodeHint":
+    "Штрихи заполняют отведённый прямоугольник — потяните за маркер, чтобы сделать символ выше, шире или уже.",
+  "lbl.logoHint":
+    "Логотип сохраняет свои пропорции внутри прямоугольника, а выравнивание определяет, где он встанет в оставшемся месте.",
+  "lbl.dragHint":
+    "Перетащите элемент, чтобы переместить его, маркер — чтобы изменить размер. Стрелки сдвигают выбранный элемент.",
+  "lbl.save": "Сохранить макет",
+  "lbl.reset": "Вернуть стандартный макет",
+  "lbl.discard": "Отменить изменения",
+  "lbl.saved": "Сохранено — этикетки со «Склада» печатаются по этому макету.",
+  "lbl.unsaved": "Есть несохранённые изменения",
+  "lbl.sample": "Образец товара",
 };
 
 export const az = {
@@ -659,6 +769,7 @@ export const az = {
   "nav.reports": "Hesabatlar",
   "nav.activity": "Fəaliyyət",
   "nav.users": "İstifadəçilər",
+  "nav.tools": "Alətlər",
   "nav.settings": "Tənzimləmələr",
   "nav.main": "Əsas naviqasiya",
   "nav.open": "Naviqasiyanı aç",
@@ -955,6 +1066,8 @@ export const az = {
   "prn.preview": "{width} × {height} mm",
   "prn.sizeHint":
     "En və hündürlük printerə göndərilən səhifədir və sürücüdəki etiket ölçüsü ilə üst-üstə düşməlidir — sürücünün verə bilmədiyi ölçü daha böyük vərəqə tamamlanır. Çevirmə isə səhifəni dəyişmədən dizaynı döndərir.",
+  "prn.designHint":
+    "Etiketdə nəyin olduğu və hər hissəsinin harada dayandığı «Alətlər» bölməsindəki etiket dizaynerində təyin olunur.",
   "prn.hint":
     "Say stokdan götürülür, amma onunla məhdudlaşmır — nə qədər lazımdırsa, o qədər etiket çap edin. 0 həmin məhsulu keçir.",
   "prn.total_one": "{count} etiket",
@@ -965,6 +1078,58 @@ export const az = {
   "err.printJob":
     "Bir çap işində ən çox {max} etiket olur. Sayı azaldın və ya qalanını ikinci dəfə çap edin.",
   "err.labelSize": "Etiketin eni və hündürlüyü {min}–{max} mm arasında olmalıdır.",
+
+  "tools.desc":
+    "Digər bölmələrin nə hazırladığını burada təyin edin. Alət bir dəfə qurulur və çap edən, ixrac edən bütün ekranlar ona uyğun işləyir.",
+  "tools.back": "Bütün alətlər",
+  "tools.labelDesigner": "Etiket dizayneri",
+  "tools.labelDesigner.desc":
+    "«Anbar»dan çap olunan barkod etiketinin quruluşu.",
+
+  "lbl.section.label": "Etiket",
+  "lbl.section.elements": "Elementlər",
+  "lbl.margin": "Kənar boşluq (mm)",
+  "lbl.storeName": "Mağazanın adı",
+  "lbl.el.logo": "Mağaza loqosu",
+  "lbl.el.store": "Mağazanın adı",
+  "lbl.el.name": "Məhsulun adı",
+  "lbl.el.barcode": "Barkod",
+  "lbl.el.code": "Barkod nömrəsi",
+  "lbl.el.price": "Qiymət",
+  "lbl.show": "{name} göstərilsin",
+  "lbl.move": "{name} — sürüşdürərək yerini dəyişin, ox düymələri ilə addımlayın",
+  "lbl.hidden": "Gizlidir — bu element çap olunmur.",
+  "lbl.x": "X (%)",
+  "lbl.y": "Y (%)",
+  "lbl.w": "En (%)",
+  "lbl.h": "Hündürlük (%)",
+  "lbl.fontSize": "Şrift ölçüsü (pt)",
+  "lbl.lineHeight": "Sətir aralığı",
+  "lbl.fontWeight": "Şrift qalınlığı",
+  "lbl.weight.400": "Adi",
+  "lbl.weight.500": "Orta",
+  "lbl.weight.600": "Yarımqalın",
+  "lbl.weight.700": "Qalın",
+  "lbl.snap": "Etiket üzərində düzlə",
+  "lbl.align": "Düzləndirmə",
+  "lbl.align.left": "Sola",
+  "lbl.align.center": "Mərkəzə",
+  "lbl.align.right": "Sağa",
+  "lbl.align.top": "Yuxarıya",
+  "lbl.align.middle": "Ortaya",
+  "lbl.align.bottom": "Aşağıya",
+  "lbl.barcodeHint":
+    "Zolaqlar verilən sahəni doldurur — tutacaqdan çəkərək simvolu hündür, geniş və ya dar edin.",
+  "lbl.logoHint":
+    "Loqo öz nisbətlərini saxlayır, düzləndirmə isə onun qalan boşluqda harada dayanacağını təyin edir.",
+  "lbl.dragHint":
+    "Elementi sürüşdürərək yerini, tutacağı çəkərək ölçüsünü dəyişin. Ox düymələri seçilmiş elementi addımlayır.",
+  "lbl.save": "Dizaynı yadda saxla",
+  "lbl.reset": "Standart şablona qaytar",
+  "lbl.discard": "Dəyişiklikləri ləğv et",
+  "lbl.saved": "Yadda saxlanıldı — «Anbar»dan çap olunan etiketlər bu dizaynla çıxır.",
+  "lbl.unsaved": "Yadda saxlanılmamış dəyişikliklər",
+  "lbl.sample": "Nümunə məhsul",
 };
 
 export const dictionaries = { en, ru, az };

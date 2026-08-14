@@ -261,14 +261,20 @@ each product with its color, size, stock and a label count.
   tag — but nothing holds it there: 5 on hand and 20 labels wanted is a
   legitimate job, and a count of 0 skips that product.
 - **Label width and height** are set in millimetres on the same dialog, and
-  carry over to the next print, since a shop buys one size of label stock and
-  stays on it. They describe the *stock*, and are never swapped behind the
-  user's back: a 40 × 58 label is 40 × 58 whichever way the artwork runs.
+  open at whatever the saved design was drawn for, since a shop buys one size
+  of label stock and stays on it — while this one job is still free to go onto
+  something else without anything being redrawn. They describe the *stock*, and
+  are never swapped behind the user's back: a 40 × 58 label is 40 × 58
+  whichever way the artwork runs.
 - **Rotate 90°** turns the design a quarter turn on that unchanged stock, for
   a printer that feeds the label one way round and will not be argued with.
   Next to it sits a **preview** of the actual `Label` component at the actual
   proportions, scaled down — the design coming out sideways is then something
   seen before a roll of stock is spent finding out.
+- **Everything else comes from the saved design**, so nothing has to be set up
+  before a print run: what the label carries, where each piece sits and how it
+  is set is the [label designer](#label-designer)'s business, and this dialog
+  is quantities and stock.
 - A whole job is capped at `MAX_LABELS_PER_JOB` (1000) and a single product at
   999. Every label is an SVG symbol on a page of its own, so a five-figure job
   would lock the browser up long before it reached the printer. The running
@@ -304,14 +310,93 @@ on a landscape label — cannot push a blank page out behind it. Whether the
 driver and the browser agree on the paper is out of the app's hands: the stock
 still has to be set up in the printer driver, and picked in the print dialog.
 
-The label carries store name, product name, symbol, number and price in AZN, in
-the order of the reference design. Its type is sized from the label's own
-height rather than in fixed points (`font-size: calc(var(--label-h) / 14)`,
-children in `em`), so a 25 mm label is the same design scaled down instead of
-the same design overflowing. The rules live in the print block of
+The label carries store name, product name, symbol, number and price in AZN —
+and the shop's logo, if it is switched on — and *where* each of those sits is
+not written into the stylesheet: inside the
+face, `.label-canvas` is what the margin leaves, and every element is placed on
+it out of the saved design. The rules live in the label block of
 [src/index.css](src/index.css), in millimetres, because a label is a physical
 object; the limits on what may be typed are in
-[src/lib/labels.js](src/lib/labels.js).
+[src/lib/labels.js](src/lib/labels.js) and the design itself in
+[src/lib/labelTemplate.js](src/lib/labelTemplate.js).
+
+## Tools
+
+[src/pages/Tools.jsx](src/pages/Tools.jsx) is the back office's workshop: the
+settings that shape what the operational pages *produce*, rather than the day's
+numbers. It lists what is available and opens a tool in place — the app
+navigates by page id, so a tool is a screen within this page rather than a
+route of its own, and the list is ready for the second one. There is one so
+far.
+
+### Label designer
+
+The label printed from Inventory is designed here and nowhere else. Save it,
+and every label printed afterwards uses it: the design is state above both
+pages, so Inventory reads at print time what Tools last wrote, and there is
+nothing to set up in the print dialog beyond how many of each.
+
+**The preview is the label.** Not a rendering of the settings —
+[LabelCanvas](src/components/panels/LabelCanvas.jsx) draws the same `Label`
+component the printer gets, at the same proportions, blown up to a size a
+pointer can work at. The boxes that can be grabbed are a *second, empty copy*
+of the label laid over it: same classes, same custom properties, same rotation,
+placed by the same function. Nothing about an element's position is computed
+twice, so what is dragged and what prints cannot drift apart.
+
+**The design is percentages of the canvas, and points of type.** An element's
+x, y, width and height are shares of what the margin leaves, so a design drawn
+for 50 × 50 stock still holds together when the same design is printed on
+40 × 58 — the pieces keep their relative places instead of sliding off the
+edge. Type is the exception and is absolute: a 10 pt price is 10 pt on any
+stock, which is what anyone setting a font size expects. A drag is measured in
+screen pixels, divided by the zoom and by the canvas's own size, and lands as
+those percentages, so an element goes where it was dropped at any zoom.
+
+**Rotation is handled in the element's own frame.** On a rotated design the
+artwork's x axis runs *down* the screen and its y axis runs left, so a pointer
+delta is turned a quarter turn back before it becomes a change to the box —
+and dragging right moves the element right, whatever the design's own axes are
+doing. Arrow keys nudge the selection the same way (Shift for a bigger step),
+and the resize cursors are turned with it so a handle still points along the
+edge it drags.
+
+What can be set: the stock (width, height, rotate) and its margin, which of the
+six elements are printed at all, each one's box, and for text its size, weight,
+alignment and line spacing. The store name is text rather than a constant,
+since a label that offers to hide the shop's name should let it be the right
+name.
+
+**The store logo** is the site's own wordmark — the same
+[Logo](src/components/Logo.jsx) the sidebar shows, inline SVG rather than an
+image, so it prints at the printer's resolution instead of the screen's. It is
+off by default: the shipped design says the shop's name in type, and a label
+that suddenly grew a wordmark over it would be a surprise. Given a box that is
+not its own shape it keeps its proportions — a stretched logo is a wrong logo —
+and its **alignment** decides which end of the leftover room it takes,
+straight through to the SVG's `preserveAspectRatio`.
+
+**Align on the label** is the same six moves a careful drag makes, made
+exactly: an element to an edge of the canvas or centred on it, on one axis at a
+time, so aligning left never also moves something up. They are actions rather
+than a setting — an element's position is still the two numbers above the row,
+and the buttons only write what an edge or a centre works out to.
+
+- **Save** writes the design to `localStorage` through
+  [LabelTemplateProvider](src/labels/LabelTemplateProvider.jsx), which is what
+  makes saved mean saved: it outlives the tab it was drawn in, so a shop sets
+  its label up once. Until then the saved design is untouched and **Discard
+  changes** is the draft thrown away; **Reset to default** goes back to the
+  stack the app shipped with, which is still only a draft until it is saved.
+- **Everything read back is treated as untrusted.** `normalizeTemplate` rebuilds
+  a complete design from whatever was stored, replacing every missing or
+  impossible field with the default's and clamping each box so it cannot
+  describe an element hanging off the edge — a design written by an older
+  build, or edited by hand, still prints something sane.
+- Typing in a number field applies as you type while the value is inside its
+  range, and settles on blur if it is not, rather than snapping to the nearest
+  limit under the cursor mid-keystroke. Changes made by dragging arrive in the
+  same fields.
 
 ## Sales
 
@@ -475,16 +560,18 @@ src/
   navigation.js           nav model
   theme/                  ThemeProvider + useTheme
   i18n/                   LanguageProvider, dictionaries, az format overrides
+  labels/                 LabelTemplateProvider + useLabelTemplate
   data/erp.js             seeded demo dataset, sales history and selectors
   data/users.js           accounts, roles and the rules a login must satisfy
   lib/                    formatting, calendar dates, axis ticks, zip/exporters
   lib/barcode.js          Code 11 encoding + the label number derived from an id
   lib/labels.js           label size and print-run limits
+  lib/labelTemplate.js    the saved label design: model, defaults, normalizing
   components/
     charts/               SVG charts, legend, tooltip, card shell
     panels/               recent sales, out of stock, activity log, product list, sale, users, labels
     ui/                   Card, Button, Modal, StatusPill, Calendar, Export, Barcode, Checkbox
-  pages/                  Dashboard, Inventory, Sales, Reports, Activity, Users, placeholder
+  pages/                  Dashboard, Inventory, Sales, Reports, Activity, Users, Tools, placeholder
 ```
 
 The Dashboard's Period filter sits above everything it scopes; see

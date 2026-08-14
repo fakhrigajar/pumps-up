@@ -149,11 +149,9 @@ input[type='number'] {
    with paper.
 
    A label is a physical object, so it is measured in millimetres, and the two
-   the user typed arrive as --label-w and --label-h. One label per page: the
-   page is the label (LabelSheet writes the matching @page rule), and every
-   label after the first opens a new one. Type is sized from the face's own
-   height rather than in fixed points, so a 30 mm label is the same design
-   scaled down rather than the same design overflowing.
+   from the saved design arrive as --label-w and --label-h. One label per page:
+   the page is the label (LabelSheet writes the matching @page rule), and every
+   label after the first opens a new one.
 
    .label is the page — always the physical stock, never swapped. .label-face
    is the design printed on it, and on a rotated label it is the face that
@@ -161,6 +159,12 @@ input[type='number'] {
    left corner and walked back into place. The face is positioned out of flow
    there, so its pre-rotation box — taller than the page, on a landscape label
    — cannot push a blank page out behind it.
+
+   Inside the face, .label-canvas is what the margin leaves, and every element
+   is placed on it as a percentage of that box. Nothing here decides where
+   anything goes: the numbers come from the saved template, so the designer
+   moves an element by changing four percentages and the print sheet reads the
+   same four back.
    -------------------------------------------------------------------------- */
 
 #print-root {
@@ -190,16 +194,44 @@ input[type='number'] {
 }
 
 .label-face {
-  display: flex;
+  position: relative;
+  overflow: hidden;
   box-sizing: border-box;
   width: var(--face-w);
   height: var(--face-h);
-  flex-direction: column;
+}
+
+.label-canvas {
+  position: absolute;
+}
+
+.label-el {
+  position: absolute;
+  display: flex;
+  overflow: hidden;
   align-items: center;
-  justify-content: space-between;
-  padding: calc(var(--face-h) * 0.06) calc(var(--face-w) * 0.05);
-  font-size: calc(var(--face-h) / 14);
-  text-align: center;
+}
+
+/* The symbol fills its box in both directions — the bars are drawn with
+   preserveAspectRatio="none", so height is free to be set on its own. */
+.label-el--symbol {
+  display: block;
+}
+
+.label-bars,
+.label-logo {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.label-text {
+  display: block;
+  width: 100%;
+  /* A product name long enough to need it breaks mid-word rather than running
+     out past the edge of its box. */
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
 }
 
 .label--rotated .label-face {
@@ -223,45 +255,60 @@ input[type='number'] {
   color: #000;
 }
 
-.label-store {
-  font-size: 0.8em;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+/* --------------------------------------------------------------------------
+   Label designer.
+
+   The drag surface is a second, empty copy of the label — same classes, same
+   custom properties, same rotation — laid exactly over the printed one and
+   scaled with it. Nothing about a box's position is computed twice: a handle
+   sits on the element because both are placed by the same percentages, so
+   what is dragged and what prints cannot drift apart.
+
+   Overflow is let out of the copy alone, so a handle on an edge is a whole
+   handle rather than half of one clipped by the label's own edge.
+   -------------------------------------------------------------------------- */
+
+.designer-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: visible;
+  transform-origin: top left;
 }
 
-.label-name {
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  font-size: 1em;
-  font-weight: 700;
-  line-height: 1.2;
+.designer-overlay .label-face {
+  overflow: visible;
 }
 
-.label-symbol {
-  width: 100%;
+.designer-box {
+  position: absolute;
+  box-sizing: border-box;
+  border: 1px dashed rgba(42, 120, 214, 0.55);
+  background: transparent;
+  cursor: move;
+  /* A drag on a touch screen is a drag, not a scroll of the page under it. */
+  touch-action: none;
 }
 
-.label-bars {
-  display: block;
-  width: 100%;
-  height: calc(var(--face-h) * 0.26);
+.designer-box:hover {
+  background: rgba(42, 120, 214, 0.08);
 }
 
-.label-code {
-  margin-top: calc(var(--face-h) * 0.016);
-  font-size: 0.8em;
-  /* The trailing gap of the last character would otherwise pull the row
-     visibly left of the bars above it. */
-  text-indent: 0.3em;
-  letter-spacing: 0.3em;
-  font-variant-numeric: tabular-nums;
+.designer-box--selected {
+  border: 1px solid var(--series-1);
+  background: rgba(42, 120, 214, 0.1);
 }
 
-.label-price {
-  font-size: 1.4em;
-  font-weight: 700;
+.designer-handle {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  box-sizing: border-box;
+  margin: -6px 0 0 -6px;
+  border: 1px solid #fff;
+  border-radius: 2px;
+  background: var(--series-1);
+  touch-action: none;
 }
 
 /* Only a live print job swaps the app out for the labels. Without the class,

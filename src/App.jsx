@@ -7,6 +7,7 @@ import { Sales } from "./pages/Sales";
 import { Reports } from "./pages/Reports";
 import { Activity } from "./pages/Activity";
 import { Users } from "./pages/Users";
+import { Tools } from "./pages/Tools";
 import { ModulePlaceholder } from "./pages/ModulePlaceholder";
 import { NAV_ITEMS } from "./navigation";
 import { useTranslation } from "./i18n/context";
@@ -249,6 +250,8 @@ export default function App() {
             <Activity entries={activityLog} />
           ) : current === "users" ? (
             <Users users={userList} onAdd={addUser} onDelete={deleteUser} />
+          ) : current === "tools" ? (
+            <Tools products={productList} />
           ) : (
             <ModulePlaceholder label={t(active.labelKey)} Icon={active.Icon} />
           )}
