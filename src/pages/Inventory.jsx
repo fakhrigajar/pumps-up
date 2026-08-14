@@ -10,7 +10,7 @@ import {
 } from "../components/panels/ProductDialogs";
 import { PrintLabelsDialog } from "../components/panels/PrintLabelsDialog";
 import { LabelSheet } from "../components/panels/LabelSheet";
-import { DEFAULT_LABEL_SIZE } from "../lib/labels";
+import { DEFAULT_LABEL_LAYOUT } from "../lib/labels";
 import { filterProducts } from "../data/erp";
 import { useTranslation } from "../i18n/context";
 
@@ -22,9 +22,10 @@ export function Inventory({ products, onAdd, onUpdate, onDelete, onReturn }) {
   const [editingSku, setEditingSku] = useState(null);
   const [checkedSkus, setCheckedSkus] = useState(() => new Set());
   const [printJobs, setPrintJobs] = useState(null);
-  // Kept on the page rather than in the dialog so the size carries over to the
-  // next print — a shop buys one size of label stock and stays on it.
-  const [labelSize, setLabelSize] = useState(DEFAULT_LABEL_SIZE);
+  // Kept on the page rather than in the dialog so the size and the way the
+  // design sits on it carry over to the next print — a shop buys one size of
+  // label stock, loads it one way round, and stays there.
+  const [labelLayout, setLabelLayout] = useState(DEFAULT_LABEL_LAYOUT);
 
   const filtered = useMemo(
     () => filterProducts(products, query),
@@ -217,17 +218,17 @@ export function Inventory({ products, onAdd, onUpdate, onDelete, onReturn }) {
       {dialog === "print" && checkedProducts.length > 0 ? (
         <PrintLabelsDialog
           products={checkedProducts}
-          labelSize={labelSize}
+          labelLayout={labelLayout}
           onCancel={closeDialog}
-          onPrint={({ jobs, size }) => {
-            setLabelSize(size);
+          onPrint={({ jobs, layout }) => {
+            setLabelLayout(layout);
             setPrintJobs(jobs);
             closeDialog();
           }}
         />
       ) : null}
 
-      <LabelSheet jobs={printJobs} size={labelSize} />
+      <LabelSheet jobs={printJobs} layout={labelLayout} />
     </div>
   );
 }

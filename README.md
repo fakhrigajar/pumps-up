@@ -262,7 +262,13 @@ each product with its color, size, stock and a label count.
   legitimate job, and a count of 0 skips that product.
 - **Label width and height** are set in millimetres on the same dialog, and
   carry over to the next print, since a shop buys one size of label stock and
-  stays on it.
+  stays on it. They describe the *stock*, and are never swapped behind the
+  user's back: a 40 × 58 label is 40 × 58 whichever way the artwork runs.
+- **Rotate 90°** turns the design a quarter turn on that unchanged stock, for
+  a printer that feeds the label one way round and will not be argued with.
+  Next to it sits a **preview** of the actual `Label` component at the actual
+  proportions, scaled down — the design coming out sideways is then something
+  seen before a roll of stock is spent finding out.
 - A whole job is capped at `MAX_LABELS_PER_JOB` (1000) and a single product at
   999. Every label is an SVG symbol on a page of its own, so a five-figure job
   would lock the browser up long before it reached the printer. The running
@@ -288,6 +294,15 @@ one.
 two numbers the dialog collected, since `@page` cannot read a custom property,
 and every label after the first opens a new page. A 10-label job is 10 pages,
 each exactly the label's size, which is what a label printer expects to be fed.
+
+`.label` is that page and `.label-face` is the design on it, which is what
+makes rotation a property of the artwork rather than of the paper: on a rotated
+label the face's width and height swap and it takes a quarter turn about its
+top left corner, walked back into place with a translate. The face is
+positioned out of flow to do it, so its pre-rotation box — taller than the page
+on a landscape label — cannot push a blank page out behind it. Whether the
+driver and the browser agree on the paper is out of the app's hands: the stock
+still has to be set up in the printer driver, and picked in the print dialog.
 
 The label carries store name, product name, symbol, number and price in AZN, in
 the order of the reference design. Its type is sized from the label's own

@@ -1,11 +1,11 @@
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Barcode } from "../ui/Barcode";
-import { barcodeValue } from "../../lib/barcode";
-import { formatAmount } from "../../lib/format";
-import { DEFAULT_LABEL_SIZE } from "../../lib/labels";
+import { Label } from "./Label";
+import { DEFAULT_LABEL_LAYOUT } from "../../lib/labels";
 
-const STORE_NAME = "PUMPS UP BAKU";
+/** Marks the document while labels are mounted, so a plain Ctrl+P with nothing
+ * to print still prints the page rather than an empty sheet. */
+const PRINTING_CLASS = "printing-labels";
 
 /**
  * The labels themselves, rendered into `#print-root` — a container outside the
@@ -14,11 +14,7 @@ const STORE_NAME = "PUMPS UP BAKU";
  * say about paper, so printing swaps it out entirely rather than trying to
  * restyle it. See the print block in index.css.
  */
-/** Marks the document while labels are mounted, so a plain Ctrl+P with nothing
- * to print still prints the page rather than an empty sheet. */
-const PRINTING_CLASS = "printing-labels";
-
-export function LabelSheet({ jobs, size = DEFAULT_LABEL_SIZE }) {
+export function LabelSheet({ jobs, layout = DEFAULT_LABEL_LAYOUT }) {
   const active = Boolean(jobs && jobs.length > 0);
 
   useEffect(() => {
@@ -37,42 +33,30 @@ export function LabelSheet({ jobs, size = DEFAULT_LABEL_SIZE }) {
         a custom property, so the rule is written out here from the same two
         numbers that size the label itself — which is what makes the sheet come
         out of a label printer as whole labels rather than as a grid to cut up.
+        The numbers are the physical stock, never swapped: turning the design
+        is `rotate`'s job, because the paper in the printer cannot turn.
         The style element is inert on screen: @page only applies to print.
       */}
-      <style>{`@page { size: ${size.width}mm ${size.height}mm; margin: 0; }`}</style>
+      <style>{`@page { size: ${layout.width}mm ${layout.height}mm; margin: 0; }`}</style>
 
       <div
         className="label-sheet"
         style={{
-          "--label-w": `${size.width}mm`,
-          "--label-h": `${size.height}mm`,
+          "--label-w": `${layout.width}mm`,
+          "--label-h": `${layout.height}mm`,
         }}
       >
         {jobs.flatMap(({ product, quantity }) =>
           Array.from({ length: quantity }, (_, index) => (
-            <Label key={`${product.sku}-${index}`} product={product} />
+            <Label
+              key={`${product.sku}-${index}`}
+              product={product}
+              rotated={layout.rotate}
+            />
           )),
         )}
       </div>
     </>,
     target,
-  );
-}
-
-function Label({ product }) {
-  const code = barcodeValue(product.sku);
-
-  return (
-    <div className="label">
-      <p className="label-store">{STORE_NAME}</p>
-      <p className="label-name">{product.name}</p>
-
-      <div className="label-symbol">
-        <Barcode value={code} className="label-bars" color="#000" />
-        <p className="label-code">{code}</p>
-      </div>
-
-      <p className="label-price">{formatAmount(product.sellingPrice)} AZN</p>
-    </div>
   );
 }

@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Modal, ModalFooter } from "../ui/Modal";
 import { Button } from "../ui/Button";
+import { Checkbox } from "../ui/Checkbox";
 import { IconPrint } from "../Icons";
+import { Label } from "./Label";
 import { barcodeValue } from "../../lib/barcode";
 import {
   LABEL_MAX_MM,
@@ -17,7 +19,7 @@ const DASH = "—";
 const inRange = (value) =>
   Number.isFinite(value) && value >= LABEL_MIN_MM && value <= LABEL_MAX_MM;
 
-export function PrintLabelsDialog({ products, labelSize, onCancel, onPrint }) {
+export function PrintLabelsDialog({ products, labelLayout, onCancel, onPrint }) {
   const { t } = useTranslation();
   // Stock is the count that is usually wanted — a delivery lands and every
   // unit of it needs a tag — so it is what the field opens on. Nothing holds
@@ -28,9 +30,10 @@ export function PrintLabelsDialog({ products, labelSize, onCancel, onPrint }) {
     ),
   );
   const [size, setSize] = useState(() => ({
-    width: String(labelSize.width),
-    height: String(labelSize.height),
+    width: String(labelLayout.width),
+    height: String(labelLayout.height),
   }));
+  const [rotate, setRotate] = useState(labelLayout.rotate);
   const [error, setError] = useState(null);
 
   const parsed = products.map((product) => {
@@ -61,6 +64,7 @@ export function PrintLabelsDialog({ products, labelSize, onCancel, onPrint }) {
     setError(null);
   };
 
+
   function handleSubmit(event) {
     event.preventDefault();
 
@@ -83,7 +87,7 @@ export function PrintLabelsDialog({ products, labelSize, onCancel, onPrint }) {
       jobs: parsed
         .filter((line) => line.quantity > 0)
         .map((line) => ({ product: line.product, quantity: line.quantity })),
-      size: { width, height },
+      layout: { width, height, rotate },
     });
   }
 
@@ -100,20 +104,43 @@ export function PrintLabelsDialog({ products, labelSize, onCancel, onPrint }) {
           answers in whatever language the browser is set to. */}
       <form onSubmit={handleSubmit} noValidate>
         <div className="px-5 py-4">
-          <div className="flex flex-wrap items-end gap-3 rounded-lg border border-line bg-surface-2 px-3 py-2.5">
-            <Dimension
-              label={t("prn.width")}
-              value={size.width}
-              onChange={setDimension("width")}
+          <div className="flex flex-wrap items-start gap-4 rounded-lg border border-line bg-surface-2 px-3 py-2.5">
+            <div className="flex min-w-0 flex-1 flex-wrap items-end gap-3">
+              <Dimension
+                label={t("prn.width")}
+                value={size.width}
+                onChange={setDimension("width")}
+              />
+              <Dimension
+                label={t("prn.height")}
+                value={size.height}
+                onChange={setDimension("height")}
+              />
+
+              <label className="flex h-8 cursor-pointer items-center gap-2">
+                <Checkbox
+                  checked={rotate}
+                  onChange={() => {
+                    setRotate((value) => !value);
+                    setError(null);
+                  }}
+                />
+                <span className="text-[12.5px] text-ink-2">
+                  {t("prn.rotate")}
+                </span>
+              </label>
+
+              <p className="w-full text-[11.5px] text-ink-3">
+                {t("prn.sizeHint")}
+              </p>
+            </div>
+
+            <LabelPreview
+              product={products[0]}
+              width={Number(size.width)}
+              height={Number(size.height)}
+              rotated={rotate}
             />
-            <Dimension
-              label={t("prn.height")}
-              value={size.height}
-              onChange={setDimension("height")}
-            />
-            <p className="flex-1 text-[11.5px] text-ink-3">
-              {t("prn.sizeHint")}
-            </p>
           </div>
 
           <div className="mt-3 max-h-[38vh] overflow-y-auto">
@@ -206,6 +233,50 @@ export function PrintLabelsDialog({ products, labelSize, onCancel, onPrint }) {
         </ModalFooter>
       </form>
     </Modal>
+  );
+}
+
+const PX_PER_MM = 96 / 25.4;
+const PREVIEW_MAX_W = 190;
+const PREVIEW_MAX_H = 150;
+
+/**
+ * The label at its real proportions, scaled to fit a corner of the dialog.
+ * It is the same `Label` the printer gets, so a design that comes out turned
+ * the wrong way round can be seen turning here first, before a roll of stock
+ * is spent finding out.
+ */
+function LabelPreview({ product, width, height, rotated }) {
+  const { t } = useTranslation();
+  if (!product || !inRange(width) || !inRange(height)) return null;
+
+  const pixelWidth = width * PX_PER_MM;
+  const pixelHeight = height * PX_PER_MM;
+  const scale = Math.min(
+    1,
+    PREVIEW_MAX_W / pixelWidth,
+    PREVIEW_MAX_H / pixelHeight,
+  );
+
+  return (
+    <figure className="shrink-0">
+      <div
+        className="label-preview rounded border border-line"
+        style={{
+          width: pixelWidth * scale,
+          height: pixelHeight * scale,
+          "--label-w": `${width}mm`,
+          "--label-h": `${height}mm`,
+        }}
+      >
+        <div style={{ transform: `scale(${scale})`, transformOrigin: "top left" }}>
+          <Label product={product} rotated={rotated} />
+        </div>
+      </div>
+      <figcaption className="mt-1 text-center text-[11px] tabular-nums text-ink-3">
+        {t("prn.preview", { width, height })}
+      </figcaption>
+    </figure>
   );
 }
 

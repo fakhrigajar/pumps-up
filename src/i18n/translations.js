@@ -301,8 +301,10 @@ export const en = {
   "prn.col.qty": "Labels",
   "prn.width": "Label width (mm)",
   "prn.height": "Label height (mm)",
+  "prn.rotate": "Rotate 90°",
+  "prn.preview": "{width} × {height} mm",
   "prn.sizeHint":
-    "Each label prints on its own page, at exactly this size. Set the same size on the printer.",
+    "Width and height are the page sent to the printer, and must match the stock set in its driver — a size the driver cannot produce comes back padded out to a bigger sheet. Rotating turns the design without changing the page.",
   "prn.hint":
     "Quantities open at what is on hand and are not capped by it — print as many labels as the job needs. A quantity of 0 skips that product.",
   "prn.total_one": "{count} label",
@@ -629,8 +631,10 @@ export const ru = {
   "prn.col.qty": "Этикеток",
   "prn.width": "Ширина этикетки (мм)",
   "prn.height": "Высота этикетки (мм)",
+  "prn.rotate": "Повернуть на 90°",
+  "prn.preview": "{width} × {height} мм",
   "prn.sizeHint":
-    "Каждая этикетка печатается на отдельной странице точно такого размера. Задайте тот же размер в принтере.",
+    "Ширина и высота — это страница, отправляемая на принтер; она должна совпадать с размером носителя в его драйвере, иначе лист дополняется пустым полем до большего размера. Поворот разворачивает макет, не меняя страницу.",
   "prn.hint":
     "Количество подставляется по остатку и не ограничено им — печатайте столько этикеток, сколько нужно. Значение 0 пропускает товар.",
   "prn.total_one": "{count} этикетка",
@@ -947,8 +951,10 @@ export const az = {
   "prn.col.qty": "Etiket",
   "prn.width": "Etiket eni (mm)",
   "prn.height": "Etiket hündürlüyü (mm)",
+  "prn.rotate": "90° çevir",
+  "prn.preview": "{width} × {height} mm",
   "prn.sizeHint":
-    "Hər etiket tam bu ölçüdə ayrıca səhifədə çap olunur. Eyni ölçünü printerdə də təyin edin.",
+    "En və hündürlük printerə göndərilən səhifədir və sürücüdəki etiket ölçüsü ilə üst-üstə düşməlidir — sürücünün verə bilmədiyi ölçü daha böyük vərəqə tamamlanır. Çevirmə isə səhifəni dəyişmədən dizaynı döndərir.",
   "prn.hint":
     "Say stokdan götürülür, amma onunla məhdudlaşmır — nə qədər lazımdırsa, o qədər etiket çap edin. 0 həmin məhsulu keçir.",
   "prn.total_one": "{count} etiket",

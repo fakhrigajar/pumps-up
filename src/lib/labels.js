@@ -25,4 +25,10 @@ export const MAX_LABELS_PER_JOB = 1000;
 export const LABEL_MIN_MM = 20;
 export const LABEL_MAX_MM = 297;
 
-export const DEFAULT_LABEL_SIZE = { width: 50, height: 50 };
+/**
+ * `width` and `height` are the physical stock loaded in the printer, and stay
+ * that way — `rotate` turns the *design* a quarter turn inside it. The two are
+ * different knobs: a 40 × 58 label is 40 × 58 whichever way the artwork runs,
+ * and a printer that feeds it one way round cannot be argued with.
+ */
+export const DEFAULT_LABEL_LAYOUT = { width: 50, height: 50, rotate: false };

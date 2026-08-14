@@ -151,9 +151,16 @@ input[type='number'] {
    A label is a physical object, so it is measured in millimetres, and the two
    the user typed arrive as --label-w and --label-h. One label per page: the
    page is the label (LabelSheet writes the matching @page rule), and every
-   label after the first opens a new one. Type is sized from the label's own
+   label after the first opens a new one. Type is sized from the face's own
    height rather than in fixed points, so a 30 mm label is the same design
    scaled down rather than the same design overflowing.
+
+   .label is the page — always the physical stock, never swapped. .label-face
+   is the design printed on it, and on a rotated label it is the face that
+   turns: --face-w/--face-h swap, and the quarter turn is taken about the top
+   left corner and walked back into place. The face is positioned out of flow
+   there, so its pre-rotation box — taller than the page, on a landscape label
+   — cannot push a blank page out behind it.
    -------------------------------------------------------------------------- */
 
 #print-root {
@@ -166,24 +173,54 @@ input[type='number'] {
 }
 
 .label {
-  display: flex;
+  --face-w: var(--label-w);
+  --face-h: var(--label-h);
+  position: relative;
   overflow: hidden;
   box-sizing: border-box;
   width: var(--label-w);
   height: var(--label-h);
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.label--rotated {
+  --face-w: var(--label-h);
+  --face-h: var(--label-w);
+}
+
+.label-face {
+  display: flex;
+  box-sizing: border-box;
+  width: var(--face-w);
+  height: var(--face-h);
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  padding: calc(var(--label-h) * 0.06) calc(var(--label-w) * 0.05);
-  font-size: calc(var(--label-h) / 14);
+  padding: calc(var(--face-h) * 0.06) calc(var(--face-w) * 0.05);
+  font-size: calc(var(--face-h) / 14);
   text-align: center;
-  break-inside: avoid;
-  page-break-inside: avoid;
+}
+
+.label--rotated .label-face {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: rotate(90deg) translate(0, -100%);
+  transform-origin: top left;
 }
 
 .label + .label {
   break-before: page;
   page-break-before: always;
+}
+
+/* The dialog's preview: the same label, on its own white ground so it reads as
+   a physical label rather than as part of the surrounding surface. */
+.label-preview {
+  overflow: hidden;
+  background: #fff;
+  color: #000;
 }
 
 .label-store {
@@ -209,11 +246,11 @@ input[type='number'] {
 .label-bars {
   display: block;
   width: 100%;
-  height: calc(var(--label-h) * 0.26);
+  height: calc(var(--face-h) * 0.26);
 }
 
 .label-code {
-  margin-top: calc(var(--label-h) * 0.016);
+  margin-top: calc(var(--face-h) * 0.016);
   font-size: 0.8em;
   /* The trailing gap of the last character would otherwise pull the row
      visibly left of the bars above it. */
