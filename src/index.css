@@ -1,0 +1,273 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* --------------------------------------------------------------------------
+   Design tokens.
+
+   Light is defined on bare :root so every color has a value before any theme
+   class lands, and is the default. The dark set is redefined under .dark,
+   which ThemeProvider stamps on <html> when the dark theme is selected.
+   -------------------------------------------------------------------------- */
+
+:root {
+  color-scheme: light;
+
+  /* Surfaces */
+  --plane: #f9f9f7;
+  --surface-1: #fcfcfb;
+  --surface-2: #f2f1ed;
+  --surface-3: #e9e8e2;
+
+  /* Ink */
+  --ink-1: #0b0b0b;
+  --ink-2: #52514e;
+  --ink-3: #898781;
+
+  /* Chrome */
+  --line: #e1e0d9;
+  --axis: #c3c2b7;
+  --ring: rgba(11, 11, 11, 0.1);
+
+  /* Categorical series (validated: adjacent + all-pairs, light surface) */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+
+  /* Series 1 washed into the surface, for a fill that sits behind full-strength
+     ink (the calendar's selected range). A real token rather than an alpha
+     modifier: these colors are var() strings, which Tailwind 3 cannot apply an
+     opacity modifier to, and fading the element itself would fade its text. */
+  --accent-soft: #dae7f5;
+
+  /* Ordinal ramp, single hue, light -> dark */
+  --ordinal-1: #86b6ef;
+  --ordinal-2: #5598e7;
+  --ordinal-3: #2a78d6;
+  --ordinal-4: #1c5cab;
+  --ordinal-5: #104281;
+
+  /* Status (fixed, never themed) */
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
+
+  /* Delta text: success needs to clear text contrast on the light surface */
+  --delta-up: #006300;
+  --delta-down: #b5302f;
+}
+
+.dark {
+  color-scheme: dark;
+
+  --plane: #0d0d0d;
+  --surface-1: #1a1a19;
+  --surface-2: #232322;
+  --surface-3: #2c2c2a;
+
+  --ink-1: #ffffff;
+  --ink-2: #c3c2b7;
+  --ink-3: #898781;
+
+  --line: #2c2c2a;
+  --axis: #383835;
+  --ring: rgba(255, 255, 255, 0.1);
+
+  /* Same eight hues, stepped for the dark surface */
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+
+  --accent-soft: #1e344c;
+
+  --ordinal-1: #cde2fb;
+  --ordinal-2: #9ec5f4;
+  --ordinal-3: #6da7ec;
+  --ordinal-4: #2a78d6;
+  --ordinal-5: #184f95;
+
+  --delta-up: #0ca30c;
+  --delta-down: #e66767;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background-color: var(--plane);
+  color: var(--ink-1);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Theme swap should not animate every chart mark on every repaint, so the
+   transition is scoped to the surfaces that actually change. */
+.theme-transition,
+.theme-transition * {
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-transition,
+  .theme-transition * {
+    transition: none;
+  }
+}
+
+/* No native spinners on number inputs — quantity fields carry their own
+   stepper buttons, and the browser arrows are too small to hit reliably. */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* Focus ring that reads on both surfaces */
+:focus-visible {
+  outline: 2px solid var(--series-1);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* --------------------------------------------------------------------------
+   Barcode labels.
+
+   The sheet lives in #print-root, outside the app root, so printing can hide
+   the whole application and show the labels alone — the app shell is a
+   fixed-height, scrolling, themed layout, and none of that survives contact
+   with paper.
+
+   A label is a physical object, so it is measured in millimetres, and the two
+   the user typed arrive as --label-w and --label-h. One label per page: the
+   page is the label (LabelSheet writes the matching @page rule), and every
+   label after the first opens a new one. Type is sized from the label's own
+   height rather than in fixed points, so a 30 mm label is the same design
+   scaled down rather than the same design overflowing.
+   -------------------------------------------------------------------------- */
+
+#print-root {
+  display: none;
+}
+
+.label-sheet {
+  background: #fff;
+  color: #000;
+}
+
+.label {
+  display: flex;
+  overflow: hidden;
+  box-sizing: border-box;
+  width: var(--label-w);
+  height: var(--label-h);
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(var(--label-h) * 0.06) calc(var(--label-w) * 0.05);
+  font-size: calc(var(--label-h) / 14);
+  text-align: center;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.label + .label {
+  break-before: page;
+  page-break-before: always;
+}
+
+.label-store {
+  font-size: 0.8em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.label-name {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  font-size: 1em;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.label-symbol {
+  width: 100%;
+}
+
+.label-bars {
+  display: block;
+  width: 100%;
+  height: calc(var(--label-h) * 0.26);
+}
+
+.label-code {
+  margin-top: calc(var(--label-h) * 0.016);
+  font-size: 0.8em;
+  /* The trailing gap of the last character would otherwise pull the row
+     visibly left of the bars above it. */
+  text-indent: 0.3em;
+  letter-spacing: 0.3em;
+  font-variant-numeric: tabular-nums;
+}
+
+.label-price {
+  font-size: 1.4em;
+  font-weight: 700;
+}
+
+/* Only a live print job swaps the app out for the labels. Without the class,
+   Ctrl+P anywhere in the app would print a blank sheet — #print-root is empty
+   whenever nothing is being printed. LabelSheet sets it while it is mounted,
+   and the @page rule comes from there too. */
+@media print {
+  html,
+  body {
+    height: auto;
+  }
+
+  body.printing-labels {
+    background: #fff;
+  }
+
+  body.printing-labels #root {
+    display: none !important;
+  }
+
+  body.printing-labels #print-root {
+    display: block;
+  }
+}
+
+/* Scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--surface-3) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--surface-3);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
