@@ -10,9 +10,9 @@ import {
   IconAlignMiddle,
   IconAlignRight,
   IconAlignTop,
-  IconChevronDown,
   IconChevronLeft,
 } from "../Icons";
+import { Select } from "../ui/Select";
 import { useLabelTemplate } from "../../labels/context";
 import {
   alignBox,
@@ -115,7 +115,12 @@ export function LabelDesigner({ product, onBack }) {
         </Button>
       </div>
 
-      <div className="grid gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_340px]">
+      {/* The row is spelled out as `minmax(0, 1fr)` rather than left to
+          default: an implicit row is sized to its tallest item, so the settings
+          panel would set the height of the pane it is supposed to be scrolling
+          inside, and push the whole grid past the bottom of the screen. Pinned
+          to the grid's own height, the panel shrinks and scrolls instead. */}
+      <div className="grid gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_340px] lg:grid-rows-[minmax(0,1fr)]">
         <Card className="flex min-h-[340px] flex-col overflow-hidden">
           <LabelCanvas
             template={draft}
@@ -343,27 +348,18 @@ export function LabelDesigner({ product, onBack }) {
                   />
                 </div>
 
-                <label className="mt-2 block">
-                  <span className="text-[12px] font-medium text-ink-2">
-                    {t("lbl.fontWeight")}
-                  </span>
-                  <span className="relative mt-1 block">
-                    <select
-                      value={element.fontWeight}
-                      onChange={(event) =>
-                        setElementField("fontWeight")(Number(event.target.value))
-                      }
-                      className="h-8 w-full cursor-pointer appearance-none rounded-lg border border-line bg-surface-2 px-2 pr-8 text-[13px] text-ink-1 focus:bg-surface-1"
-                    >
-                      {FONT_WEIGHTS.map((weight) => (
-                        <option key={weight} value={weight}>
-                          {t(`lbl.weight.${weight}`)}
-                        </option>
-                      ))}
-                    </select>
-                    <IconChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-3" />
-                  </span>
-                </label>
+                <Control label={t("lbl.fontWeight")}>
+                  <Select
+                    size="sm"
+                    label={t("lbl.fontWeight")}
+                    value={element.fontWeight}
+                    onChange={setElementField("fontWeight")}
+                    options={FONT_WEIGHTS.map((weight) => ({
+                      value: weight,
+                      label: t(`lbl.weight.${weight}`),
+                    }))}
+                  />
+                </Control>
               </>
             ) : (
               <p className="mt-2 text-[11.5px] text-ink-3">

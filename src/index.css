@@ -91,6 +91,9 @@
   --delta-down: #e66767;
 }
 
+/* The window is the frame, not the page: the shell is exactly a screen tall
+   and never scrolls. What scrolls is the list inside it, under a heading and a
+   column of headers that stay put. */
 html,
 body,
 #root {
@@ -104,15 +107,27 @@ body {
 }
 
 /* Theme swap should not animate every chart mark on every repaint, so the
-   transition is scoped to the surfaces that actually change. */
-.theme-transition,
-.theme-transition * {
-  transition:
-    background-color 160ms ease,
-    border-color 160ms ease,
-    color 160ms ease;
+   transition is scoped to the surfaces that actually change.
+
+   It sits in `base` on purpose. As a plain rule it landed after Tailwind's
+   utilities and, matching on the same specificity, quietly beat every one of
+   them: a component asking for `transition-[height]` got this colour fade
+   instead and its animation simply did not happen. In the base layer the
+   default still reaches everything that asks for nothing, and a component
+   that names its own transition gets the one it asked for. */
+@layer base {
+  .theme-transition,
+  .theme-transition * {
+    transition:
+      background-color 160ms ease,
+      border-color 160ms ease,
+      color 160ms ease;
+  }
 }
 
+/* Deliberately *not* in a layer: this one has to outrank the utilities too,
+   or a component's own transition would animate for somebody who asked the
+   whole system to stop moving. */
 @media (prefers-reduced-motion: reduce) {
   .theme-transition,
   .theme-transition * {

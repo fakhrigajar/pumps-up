@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Card } from "../components/ui/Card";
-import { IconChevronDown } from "../components/Icons";
+import { Select } from "../components/ui/Select";
 import {
   formatClockTime,
   formatMinutesAgo,
@@ -61,26 +61,20 @@ export function Activity({ entries }) {
     <div className="flex h-full min-h-0 flex-col">
       <div className="shrink-0 pb-4">
         <Card className="flex flex-wrap items-center gap-3 px-4 py-3">
-          <label className="relative flex h-9 items-center rounded-lg border border-line bg-surface-1 pl-3 pr-8 hover:bg-surface-2">
-            <span className="mr-1.5 text-[13px] text-ink-3">
-              {t("act.filter")}
-            </span>
-
-            <select
-              value={filter}
-              onChange={(event) => setFilter(event.target.value)}
-              aria-label={t("act.filter")}
-              className="cursor-pointer appearance-none bg-transparent pr-1 text-[13px] font-medium text-ink-1 outline-none"
-            >
-              <option value="all">{t("act.all")}</option>
-              {ACTIONS.map((action) => (
-                <option key={action.id} value={action.id}>
-                  {t(`act.action.${action.id}`)}
-                </option>
-              ))}
-            </select>
-            <IconChevronDown className="pointer-events-none absolute right-2 h-4 w-4 text-ink-3" />
-          </label>
+          <Select
+            variant="pill"
+            label={t("act.filter")}
+            caption={t("act.filter")}
+            value={filter}
+            onChange={setFilter}
+            options={[
+              { value: "all", label: t("act.all") },
+              ...ACTIONS.map((action) => ({
+                value: action.id,
+                label: t(`act.action.${action.id}`),
+              })),
+            ]}
+          />
 
           <p className="text-[13px] text-ink-3" aria-live="polite">
             {t("act.count", { count: rows.length })}

@@ -6,9 +6,18 @@ import { linePath } from './charts/shapes'
 import { CHROME, MARK, SERIES } from './charts/tokens'
 import { useTranslation } from '../i18n/context'
 
+/**
+ * One number, and what it is doing.
+ *
+ * The comparison and the sparkline are both optional: a figure like the value
+ * of the stock on the shelves has nothing to be compared against and no series
+ * behind it, and a tile that padded that out with an empty trend line would be
+ * describing the layout rather than the shop.
+ */
 export function StatTile({ label, value, format, delta, deltaUnit, upIsGood, spark, note }) {
   const { t } = useTranslation()
-  const isFlat = Math.abs(delta) < 0.05
+  const hasDelta = Number.isFinite(delta)
+  const isFlat = hasDelta && Math.abs(delta) < 0.05
   const isGood = delta > 0 === upIsGood
   const Arrow = delta >= 0 ? IconArrowUp : IconArrowDown
 
@@ -23,20 +32,24 @@ export function StatTile({ label, value, format, delta, deltaUnit, upIsGood, spa
         <Sparkline values={spark} />
       </div>
 
-      <div className="mt-3 flex items-center gap-1.5">
-        {isFlat ? (
-          <span className="text-[12px] font-medium text-ink-2">{t('kpi.noChange')}</span>
-        ) : (
-          <span
-            className="flex items-center gap-0.5 text-[12px] font-medium"
-            style={{ color: isGood ? 'var(--delta-up)' : 'var(--delta-down)' }}
-          >
-            <Arrow className="h-3.5 w-3.5" />
-            {formatDelta(delta, deltaUnit)}
-          </span>
-        )}
-        <span className="text-[12px] text-ink-3">{note}</span>
-      </div>
+      {hasDelta || note ? (
+        <div className="mt-3 flex items-center gap-1.5">
+          {hasDelta ? (
+            isFlat ? (
+              <span className="text-[12px] font-medium text-ink-2">{t('kpi.noChange')}</span>
+            ) : (
+              <span
+                className="flex items-center gap-0.5 text-[12px] font-medium"
+                style={{ color: isGood ? 'var(--delta-up)' : 'var(--delta-down)' }}
+              >
+                <Arrow className="h-3.5 w-3.5" />
+                {formatDelta(delta, deltaUnit)}
+              </span>
+            )
+          ) : null}
+          {note ? <span className="text-[12px] text-ink-3">{note}</span> : null}
+        </div>
+      ) : null}
     </Card>
   )
 }

@@ -297,6 +297,35 @@ export const IconAlignBottom = (p) => (
   </Icon>
 )
 
+export const IconRegister = (p) => (
+  <Icon {...p}>
+    <rect x="2.5" y="9" width="19" height="11.5" rx="2" />
+    <path d="M6.5 9V6a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v3" />
+    <path d="M9.5 13.5h5M12 13.5v3.5" />
+  </Icon>
+)
+
+export const IconClock = (p) => (
+  <Icon {...p}>
+    <circle cx="12" cy="12" r="9.25" />
+    <path d="M12 6.75V12l3.5 2.25" />
+  </Icon>
+)
+
+export const IconKey = (p) => (
+  <Icon {...p}>
+    <circle cx="8" cy="15.5" r="4.25" />
+    <path d="M11.25 12.75 19.5 4.5M17 7l2.25 2.25M14.75 9.25 17 11.5" />
+  </Icon>
+)
+
+export const IconSignOut = (p) => (
+  <Icon {...p}>
+    <path d="M15 4.5h2.5A2 2 0 0 1 19.5 6.5v11a2 2 0 0 1-2 2H15" />
+    <path d="M11 8.5 14.5 12 11 15.5M14.5 12h-10" />
+  </Icon>
+)
+
 export const IconTable = (p) => (
   <Icon {...p}>
     <rect x="3" y="4.5" width="18" height="15" rx="2" />

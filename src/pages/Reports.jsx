@@ -3,6 +3,10 @@ import { Card } from "../components/ui/Card";
 import { CalendarPicker } from "../components/ui/CalendarPicker";
 import { ExportMenu } from "../components/ui/ExportMenu";
 import { PaymentTag } from "../components/ui/PaymentTag";
+import { Select } from "../components/ui/Select";
+import { ChartCard, DataTable } from "../components/charts/ChartCard";
+import { HeatmapLegend, SalesHeatmap } from "../components/charts/SalesHeatmap";
+import { countOrders, selectHeatmap } from "../data/register";
 import { daySelection, isWithin, todayIso } from "../lib/dates";
 import {
   formatDate,
@@ -12,9 +16,56 @@ import {
 } from "../lib/format";
 import { useTranslation } from "../i18n/context";
 
-export function Reports({ sales }) {
+export function Reports({ sales, sessions }) {
   const { t, language } = useTranslation();
   const [selection, setSelection] = useState(() => daySelection(todayIso()));
+  const [grouping, setGrouping] = useState("day");
+  const [metric, setMetric] = useState("revenue");
+
+  const heatmap = useMemo(
+    () =>
+      selectHeatmap(sessions, {
+        start: selection.start,
+        end: selection.end,
+        groupBy: grouping,
+      }),
+    [sessions, selection, grouping],
+  );
+
+  const heatmapRows = useMemo(
+    () =>
+      heatmap.rows.map((row) => ({
+        id: row.id,
+        label: grouping === "day" ? formatDate(row.key) : row.key,
+        cells: row.cells.map((cell) => ({
+          hour: cell.hour,
+          value: metric === "revenue" ? cell.revenue : cell.orders,
+          footer:
+            cell.orders === 0
+              ? undefined
+              : `${t("reg.ordersCount", { count: cell.orders })} · ${formatPrice(cell.revenue)}`,
+        })),
+      })),
+    [heatmap, grouping, metric, t],
+  );
+
+  const busiest = useMemo(() => {
+    const totals = heatmap.hours.map((hour, index) => ({
+      hour,
+      orders: heatmap.rows.reduce(
+        (sum, row) => sum + row.cells[index].orders,
+        0,
+      ),
+      revenue: heatmap.rows.reduce(
+        (sum, row) => sum + row.cells[index].revenue,
+        0,
+      ),
+    }));
+    return totals;
+  }, [heatmap]);
+
+  const showValue = (value) =>
+    metric === "revenue" ? formatPrice(value) : formatNumber(value);
 
   const rows = useMemo(
     () =>
@@ -22,6 +73,13 @@ export function Reports({ sales }) {
         isWithin(sale.date, selection.start, selection.end),
       ),
     [sales, selection],
+  );
+
+  /** Customers rather than items: the rows already in `rows`, counted by the
+   * checkout each belonged to. Same list, same date range, same filters. */
+  const orderCount = useMemo(
+    () => countOrders(rows, selection.start, selection.end),
+    [rows, selection],
   );
 
   const totals = useMemo(
@@ -112,12 +170,17 @@ export function Reports({ sales }) {
           value: Math.round(totals.profit * 100) / 100,
           display: formatPrice(totals.profit),
         },
+        {
+          label: t("rep.totalOrders"),
+          value: orderCount,
+          display: formatNumber(orderCount),
+        },
       ],
     };
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex flex-col">
       <div className="shrink-0 pb-4">
         <Card className="flex flex-wrap items-center gap-3 px-4 py-3">
           <CalendarPicker selection={selection} onChange={setSelection} />
@@ -131,9 +194,99 @@ export function Reports({ sales }) {
             <ExportMenu buildDoc={buildDoc} disabled={rows.length === 0} />
           </div>
         </Card>
+        <div className="mt-4 grid shrink-0 grid-cols-1 gap-4 sm:grid-cols-3">
+          <TotalCard
+            label={t("rep.totalSales")}
+            value={formatPrice(totals.sales)}
+          />
+          <TotalCard
+            label={t("rep.totalProfit")}
+            value={formatPrice(totals.profit)}
+            tone={totals.profit < 0 ? "critical" : "good"}
+          />
+          <TotalCard
+            label={t("rep.totalOrders")}
+            value={formatNumber(orderCount)}
+          />
+        </div>
       </div>
 
-      <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="shrink-0 pb-4">
+        <ChartCard
+          title={t("heat.title")}
+          subtitle={t("heat.subtitle")}
+          legend={undefined}
+          table={
+            <DataTable
+              columns={[
+                { key: "hour", label: t("heat.col.hour") },
+                { key: "orders", label: t("heat.col.orders"), align: "right" },
+                {
+                  key: "revenue",
+                  label: t("heat.col.revenue"),
+                  align: "right",
+                },
+              ]}
+              rows={busiest.map((row) => ({
+                key: row.hour,
+                hour: `${String(row.hour).padStart(2, "0")}:00`,
+                orders: formatNumber(row.orders),
+                revenue: formatPrice(row.revenue),
+              }))}
+            />
+          }
+          footer={
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <HeatmapLegend
+                lowLabel={t("heat.quiet")}
+                highLabel={t("heat.busy")}
+              />
+              <div className="flex flex-wrap items-center gap-2">
+                <Select
+                  variant="pill"
+                  label={t("heat.metric")}
+                  caption={t("heat.metric")}
+                  value={metric}
+                  onChange={setMetric}
+                  options={[
+                    { value: "revenue", label: t("heat.revenue") },
+                    { value: "orders", label: t("heat.orders") },
+                  ]}
+                />
+                <Select
+                  variant="pill"
+                  label={t("heat.rows")}
+                  caption={t("heat.rows")}
+                  value={grouping}
+                  onChange={setGrouping}
+                  options={[
+                    { value: "day", label: t("heat.byDay") },
+                    { value: "cashier", label: t("heat.byCashier") },
+                  ]}
+                />
+              </div>
+            </div>
+          }
+        >
+          {heatmapRows.length === 0 ? (
+            <p className="px-3 py-8 text-center text-[13px] text-ink-3">
+              {t("heat.empty")}
+            </p>
+          ) : (
+            <div className="px-1">
+              <SalesHeatmap
+                rows={heatmapRows}
+                hours={heatmap.hours}
+                formatValue={showValue}
+                ariaLabel={t("heat.aria")}
+                maxHeight={168}
+              />
+            </div>
+          )}
+        </ChartCard>
+      </div>
+
+      <Card className="flex flex-col">
         <div className="shrink-0 px-5 pb-3 pt-4">
           <h2 className="text-[15px] font-semibold leading-tight text-ink-1">
             {t("rep.title")}
@@ -141,7 +294,7 @@ export function Reports({ sales }) {
           <p className="mt-0.5 text-[13px] text-ink-3">{t("rep.subtitle")}</p>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="max-sm:overflow-x-auto">
           <table className="w-full border-separate border-spacing-0 text-left text-[13px]">
             <thead>
               <tr>
@@ -191,27 +344,21 @@ export function Reports({ sales }) {
           ) : null}
         </div>
       </Card>
-
-      <div className="mt-4 grid shrink-0 grid-cols-1 gap-4 sm:grid-cols-2">
-        <TotalCard
-          label={t("rep.totalSales")}
-          value={formatPrice(totals.sales)}
-        />
-        <TotalCard
-          label={t("rep.totalProfit")}
-          value={formatPrice(totals.profit)}
-          tone={totals.profit < 0 ? "critical" : "good"}
-        />
-      </div>
     </div>
   );
 }
 
+/**
+ * The page scrolls, so the column headers ride up and stop at the top of it.
+ * The offset is the negative of `main`'s own padding: `top: 0` would pin them
+ * to the *content* edge and leave a band of padding above, through which the
+ * rows would go on scrolling in plain sight.
+ */
 function Th({ children, align, className = "" }) {
   return (
     <th
       scope="col"
-      className={`sticky top-0 z-[5] border-y border-line bg-surface-2 py-2 pr-4 text-[12px] font-medium text-ink-3 ${
+      className={`sticky -top-4 z-[5] border-y border-line bg-surface-2 py-2 pr-4 text-[12px] font-medium text-ink-3 sm:-top-6 ${
         align === "right" ? "text-right" : ""
       } ${className}`}
     >

@@ -1,7 +1,7 @@
 import { Barcode } from "../ui/Barcode";
 import { Logo } from "../Logo";
 import { barcodeValue } from "../../lib/barcode";
-import { formatAmount } from "../../lib/format";
+import { currencyCode, formatAmount } from "../../lib/format";
 import {
   boxStyle,
   canvasStyle,
@@ -108,5 +108,5 @@ function textOf(id, product, template, code) {
   if (id === "store") return template.storeName;
   if (id === "name") return product.name;
   if (id === "code") return code;
-  return `${formatAmount(product.sellingPrice)} AZN`;
+  return `${formatAmount(product.sellingPrice)} ${currencyCode()}`;
 }

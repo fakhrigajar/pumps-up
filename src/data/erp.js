@@ -10,7 +10,7 @@ import {
   todayIso,
 } from "../lib/dates";
 
-function mulberry32(seed) {
+export function mulberry32(seed) {
   let a = seed >>> 0;
   return function next() {
     a = (a + 0x6d2b79f5) >>> 0;
@@ -30,7 +30,7 @@ export const dateRanges = [
 const saleRevenue = (sale) => sale.soldFor * sale.qty;
 const saleCost = (sale) => sale.purchasePrice * sale.qty;
 
-function trailingWindow(monthsBack) {
+export function trailingWindow(monthsBack) {
   const end = todayIso();
   const { year, monthIndex } = isoParts(end);
   const from = addMonths(year, monthIndex, -(monthsBack - 1));
@@ -111,46 +111,6 @@ export function selectRealKpis(sales, monthsBack) {
       spark: daily.map((d) => (d.orders ? d.revenue / d.orders : 0)),
     },
   ];
-}
-
-export function selectMonthRevenue(sales) {
-  const now = new Date();
-  const start = startOfMonthIso(now.getFullYear(), now.getMonth());
-  const end = todayIso();
-
-  const byDay = new Map();
-  for (const sale of sales) {
-    if (!isWithin(sale.date, start, end)) continue;
-    byDay.set(sale.date, (byDay.get(sale.date) ?? 0) + saleRevenue(sale));
-  }
-
-  return datesBetween(start, end).map((date) => ({
-    date,
-    revenue: byDay.get(date) ?? 0,
-  }));
-}
-
-const BEST_SELLER_COUNT = 7;
-
-export function selectBestSellers(sales, products, monthsBack, limit = BEST_SELLER_COUNT) {
-  const { start, end } = trailingWindow(monthsBack);
-  const bySku = new Map();
-
-  for (const sale of sales) {
-    if (!isWithin(sale.date, start, end)) continue;
-    const entry = bySku.get(sale.sku) ?? {
-      sku: sale.sku,
-      name: sale.name,
-      category: products.find((product) => product.sku === sale.sku)?.category,
-      units: 0,
-      revenue: 0,
-    };
-    entry.units += sale.qty;
-    entry.revenue += saleRevenue(sale);
-    bySku.set(sale.sku, entry);
-  }
-
-  return [...bySku.values()].sort((a, b) => b.units - a.units).slice(0, limit);
 }
 
 export function selectOutOfStock(products) {

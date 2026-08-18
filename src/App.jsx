@@ -8,17 +8,55 @@ import { Reports } from "./pages/Reports";
 import { Activity } from "./pages/Activity";
 import { Users } from "./pages/Users";
 import { Tools } from "./pages/Tools";
+import { Register } from "./pages/Register";
+import { Settings } from "./pages/Settings";
+import { Login } from "./pages/Login";
 import { ModulePlaceholder } from "./pages/ModulePlaceholder";
-import { NAV_ITEMS } from "./navigation";
+import { canOpen, NAV_ITEMS, pagesFor } from "./navigation";
 import { useTranslation } from "./i18n/context";
 import {
+  mulberry32,
   products as initialProducts,
   salesHistory as initialSales,
 } from "./data/erp";
 import { users as initialUsers } from "./data/users";
+import {
+  buildRegisterHistory,
+  closeSession,
+  openSession,
+  openSessionOf,
+} from "./data/register";
+import { SessionContext } from "./auth/context";
+import { useSessionState } from "./auth/useSessionState";
 import { todayIso } from "./lib/dates";
 import { useMeasure } from "./lib/useMeasure";
 import { SALE_PANEL_HEIGHT } from "./lib/layout";
+
+/**
+ * The shifts behind the seeded ledger. Built once at module load from the same
+ * sales the reports read, so every screen is describing one history.
+ *
+ * It hands back which checkout each ledger row was part of and who rang it up,
+ * and the ledger is stamped with both here: "how many orders" and "whose" are
+ * then questions the sales list can answer on its own, for a seeded month and
+ * for a sale rung up a minute ago alike.
+ */
+const seeded = buildRegisterHistory(
+  initialSales,
+  initialUsers.filter((user) => user.role === "cashier").map((user) => user.login),
+  mulberry32(4931),
+);
+
+const initialSessions = seeded.sessions;
+
+const seededSales = initialSales.map((sale) => {
+  const stamp = seeded.stampOf.get(sale.id);
+  return {
+    ...sale,
+    orderId: stamp?.orderId ?? sale.id,
+    cashier: stamp?.cashier ?? null,
+  };
+});
 
 function describeChanges(before, after) {
   if (!before) return null;
@@ -99,6 +137,36 @@ export default function App() {
     [productList, logAction],
   );
 
+  const [userList, setUserList] = useState(initialUsers);
+  const session = useSessionState(userList);
+  const signedIn = session.user;
+
+  // Every shift ever rung up, newest first. A cashier's own open shift is
+  // found in here rather than held beside it, so there is one list to add an
+  // order to and one list to read a history from.
+  const [sessions, setSessions] = useState(initialSessions);
+  const openShift = signedIn ? openSessionOf(sessions, signedIn.login) : null;
+
+  const openRegister = useCallback(() => {
+    if (!signedIn) return;
+    setSessions((list) =>
+      openSessionOf(list, signedIn.login)
+        ? list
+        : [openSession(signedIn.login), ...list],
+    );
+  }, [signedIn]);
+
+  const closeRegister = useCallback(() => {
+    if (!signedIn) return;
+    setSessions((list) =>
+      list.map((item) =>
+        item.cashier === signedIn.login && item.closedAt === null
+          ? closeSession(item)
+          : item,
+      ),
+    );
+  }, [signedIn]);
+
   const [saleLines, setSaleLines] = useState([]);
   const [payment, setPayment] = useState("cash");
 
@@ -133,18 +201,27 @@ export default function App() {
 
   const clearSale = useCallback(() => setSaleLines([]), []);
 
-  const [sales, setSales] = useState(initialSales);
+  const [sales, setSales] = useState(seededSales);
   const saleSerial = useRef(0);
 
   const completeSale = useCallback(
     (sold) => {
       const date = todayIso();
+      // One checkout, one id: the ledger rows it produces and the shift order
+      // it becomes are stamped with the same one, so counting orders on the
+      // reports screen counts this sale once however many products were on
+      // the counter — and counts it whether or not a register was open.
+      const at = Date.now();
+      const orderId = `OR-${at}`;
+
       const entries = sold.map((line) => {
         const product = productList.find((item) => item.sku === line.sku);
         saleSerial.current += 1;
         logAction("log.sold", product ?? { name: line.sku, sku: line.sku });
         return {
           id: `SL-${date}-${saleSerial.current}`,
+          orderId,
+          cashier: signedIn?.login ?? null,
           date,
           sku: line.sku,
           name: product?.name ?? line.sku,
@@ -157,6 +234,35 @@ export default function App() {
       });
       setSales((list) => [...entries, ...list]);
 
+      // The ledger keeps a row per product; the shift keeps the checkout whole.
+      // Both are written from the same sale, so an order can never appear in
+      // one and not the other.
+      if (signedIn) {
+        setSessions((list) =>
+          list.map((item) =>
+            item.cashier === signedIn.login && item.closedAt === null
+              ? {
+                  ...item,
+                  orders: [
+                    ...item.orders,
+                    {
+                      id: orderId,
+                      at,
+                      payment,
+                      lines: entries.map((entry) => ({
+                        sku: entry.sku,
+                        name: entry.name,
+                        qty: entry.qty,
+                        soldFor: entry.soldFor,
+                      })),
+                    },
+                  ],
+                }
+              : item,
+          ),
+        );
+      }
+
       setProductList((list) =>
         list.map((product) => {
           const line = sold.find((item) => item.sku === product.sku);
@@ -167,10 +273,8 @@ export default function App() {
       );
       setSaleLines([]);
     },
-    [productList, payment, logAction],
+    [productList, payment, logAction, signedIn],
   );
-
-  const [userList, setUserList] = useState(initialUsers);
 
   const addUser = useCallback((user) => {
     setUserList((list) => [user, ...list]);
@@ -179,6 +283,21 @@ export default function App() {
   const deleteUser = useCallback((login) => {
     setUserList((list) => list.filter((user) => user.login !== login));
   }, []);
+
+  // An account editing itself on the settings screen. The session is pointed
+  // at the new login in the same breath as the list is rewritten, so a rename
+  // is a rename rather than an accidental sign-out.
+  const updateAccount = useCallback(
+    (login, changes) => {
+      setUserList((list) =>
+        list.map((user) =>
+          user.login === login ? { ...user, ...changes } : user,
+        ),
+      );
+      if (changes.login && changes.login !== login) session.follow(changes.login);
+    },
+    [session],
+  );
 
   useEffect(() => {
     if (!navOpen) return undefined;
@@ -189,17 +308,30 @@ export default function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, [navOpen]);
 
-  const active = NAV_ITEMS.find((item) => item.id === current) ?? NAV_ITEMS[0];
+  // What the signed-in role may open, and where it lands. A cashier's first
+  // page is the till rather than a dashboard they cannot see, and a page left
+  // behind by signing out as an admin is not still on screen when a cashier
+  // signs in — `current` is answered against the role every render, not only
+  // when a nav button is pressed.
+  const allowed = signedIn ? pagesFor(signedIn.role) : [];
+  const page =
+    signedIn && canOpen(current, signedIn.role) ? current : allowed[0]?.id;
+  const active = NAV_ITEMS.find((item) => item.id === page) ?? NAV_ITEMS[0];
 
   function navigate(id) {
     setCurrent(id);
     setNavOpen(false);
   }
 
+  if (!signedIn) {
+    return <Login onSignIn={session.signIn} />;
+  }
+
   return (
+    <SessionContext.Provider value={session}>
     <div className="theme-transition h-screen overflow-hidden bg-plane">
       <Sidebar
-        current={current}
+        current={page}
         onNavigate={navigate}
         open={navOpen}
         onClose={() => setNavOpen(false)}
@@ -213,17 +345,22 @@ export default function App() {
           activityLog={activityLog}
         />
 
+        {/* Takes what the topbar leaves and no more. A page that wants to be
+            taller than this scrolls a list inside itself rather than pushing
+            the window down. */}
         <main
           id="main"
           className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6"
         >
-          {current === "dashboard" ? (
+          {page === "dashboard" ? (
             <Dashboard
               products={productList}
               sales={sales}
+              sessions={sessions}
+              users={userList}
               activityLog={activityLog}
             />
-          ) : current === "sales" ? (
+          ) : page === "sales" ? (
             <Sales
               products={productList}
               lines={saleLines}
@@ -235,8 +372,14 @@ export default function App() {
               onClear={clearSale}
               onSell={completeSale}
               barHeight={sidebarFooterHeight || SALE_PANEL_HEIGHT}
+              register={{
+                required: signedIn.role === "cashier",
+                session: openShift,
+                onOpen: openRegister,
+                onClose: closeRegister,
+              }}
             />
-          ) : current === "inventory" ? (
+          ) : page === "inventory" ? (
             <Inventory
               products={productList}
               onAdd={addProducts}
@@ -244,19 +387,24 @@ export default function App() {
               onDelete={deleteProduct}
               onReturn={returnProduct}
             />
-          ) : current === "reports" ? (
-            <Reports sales={sales} />
-          ) : current === "activity" ? (
+          ) : page === "reports" ? (
+            <Reports sales={sales} sessions={sessions} />
+          ) : page === "activity" ? (
             <Activity entries={activityLog} />
-          ) : current === "users" ? (
+          ) : page === "users" ? (
             <Users users={userList} onAdd={addUser} onDelete={deleteUser} />
-          ) : current === "tools" ? (
+          ) : page === "tools" ? (
             <Tools products={productList} />
+          ) : page === "register" ? (
+            <Register sessions={sessions} users={userList} />
+          ) : page === "settings" ? (
+            <Settings users={userList} onUpdateAccount={updateAccount} />
           ) : (
             <ModulePlaceholder label={t(active.labelKey)} Icon={active.Icon} />
           )}
         </main>
       </div>
     </div>
+    </SessionContext.Provider>
   );
 }

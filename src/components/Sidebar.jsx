@@ -1,10 +1,12 @@
 import { Logo } from "./Logo";
 import { useTranslation } from "../i18n/context";
-import { IconClose, IconSettings } from "./Icons";
-import { NAV_SECTIONS } from "../navigation";
+import { IconClose, IconSettings, IconSignOut } from "./Icons";
+import { NAV_SECTIONS, SETTINGS_ITEM } from "../navigation";
+import { useSession } from "../auth/context";
 
 export function Sidebar({ current, onNavigate, open, onClose, footerRef }) {
   const { t } = useTranslation();
+  const { user, signOut } = useSession();
 
   return (
     <>
@@ -38,7 +40,14 @@ export function Sidebar({ current, onNavigate, open, onClose, footerRef }) {
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-4">
-          {NAV_SECTIONS.map((section) => (
+          {/* A section with nothing in it for this role is not an empty
+              heading — it is not a section this role has. */}
+          {NAV_SECTIONS.map((section) => ({
+            ...section,
+            items: section.items.filter((item) => item.roles.includes(user.role)),
+          }))
+            .filter((section) => section.items.length > 0)
+            .map((section) => (
             <div key={section.titleKey} className="mb-5 last:mb-0">
               <p className="px-2 pb-1.5 text-[11px] font-medium uppercase tracking-wider text-ink-3">
                 {t(section.titleKey)}
@@ -74,32 +83,55 @@ export function Sidebar({ current, onNavigate, open, onClose, footerRef }) {
         </nav>
 
         <div ref={footerRef} className="shrink-0 border-t border-line p-3">
-          <button
-            type="button"
-            onClick={() => onNavigate("settings")}
-            aria-current={current === "settings" ? "page" : undefined}
-            className={`mb-2 flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-[13.5px] transition-colors ${
-              current === "settings"
-                ? "bg-surface-2 font-medium text-ink-1"
-                : "text-ink-2 hover:bg-surface-2 hover:text-ink-1"
-            }`}
-          >
-            <IconSettings className="h-[18px] w-[18px] shrink-0 text-ink-3" />
-            {t("nav.settings")}
-          </button>
+          {/* Settings sit in the footer but are gated like any other page —
+              the same list the router checks, so the button is never on
+              screen for a role that would be turned away by pressing it. */}
+          {SETTINGS_ITEM.roles.includes(user.role) ? (
+            <button
+              type="button"
+              onClick={() => onNavigate(SETTINGS_ITEM.id)}
+              aria-current={current === SETTINGS_ITEM.id ? "page" : undefined}
+              className={`mb-2 flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-[13.5px] transition-colors ${
+                current === SETTINGS_ITEM.id
+                  ? "bg-surface-2 font-medium text-ink-1"
+                  : "text-ink-2 hover:bg-surface-2 hover:text-ink-1"
+              }`}
+            >
+              <IconSettings className="h-[18px] w-[18px] shrink-0 text-ink-3" />
+              {t(SETTINGS_ITEM.labelKey)}
+            </button>
+          ) : null}
 
           <div className="flex items-center gap-2.5 rounded-lg bg-surface-2 p-2">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-[12px] font-semibold text-white">
-              DO
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-[12px] font-semibold uppercase text-white">
+              {user.login.slice(0, 2)}
             </span>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="truncate text-[13px] font-medium text-ink-1">
-                Dami Osei
+                {user.login}
               </p>
               <p className="truncate text-[11.5px] text-ink-3">
-                {t("user.role")}
+                {t(`role.${user.role}`)}
               </p>
             </div>
+            {/* The one button here that ends something, so it wears the same
+                red the delete actions wear, and on hover it becomes the same
+                filled red the destructive buttons are.
+
+                Filled rather than tinted because a tint cannot pass in both
+                themes: any wash light enough to read as a hover on the dark
+                surface moves *towards* a mid red and drops the icon under the
+                3:1 an icon needs. White on the full red is one ratio, the
+                same in either theme. */}
+            <button
+              type="button"
+              onClick={signOut}
+              title={t("login.signOut")}
+              className="shrink-0 rounded-lg p-1.5 text-status-critical transition-colors hover:bg-status-critical hover:text-white"
+            >
+              <IconSignOut className="h-[18px] w-[18px]" />
+              <span className="sr-only">{t("login.signOut")}</span>
+            </button>
           </div>
         </div>
       </aside>

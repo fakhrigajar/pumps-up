@@ -1,6 +1,7 @@
 
 let locale = 'en-US'
 let overrides = null
+let currency = 'AZN'
 let cache = build(locale)
 
 function build(target) {
@@ -14,20 +15,20 @@ function build(target) {
     }),
     price: new Intl.NumberFormat(target, {
       style: 'currency',
-      currency: 'AZN',
+      currency,
       currencyDisplay: 'narrowSymbol',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }),
     currency: new Intl.NumberFormat(target, {
       style: 'currency',
-      currency: 'AZN',
+      currency,
       currencyDisplay: 'narrowSymbol',
       maximumFractionDigits: 0,
     }),
     currencyCompact: new Intl.NumberFormat(target, {
       style: 'currency',
-      currency: 'AZN',
+      currency,
       currencyDisplay: 'narrowSymbol',
       notation: 'compact',
       maximumFractionDigits: 1,
@@ -45,7 +46,29 @@ export function setFormatLocale(target, formatOverrides = null) {
   if (target === locale && formatOverrides === overrides) return
   locale = target
   overrides = formatOverrides
-  cache = build(formatOverrides?.numberLocale ?? target)
+  rebuild()
+}
+
+/**
+ * The currency every price in the app is written in, set once from the store
+ * settings. It lives here rather than being threaded through each call because
+ * a price is formatted in some forty places and none of them has an opinion
+ * about the currency — the shop does.
+ */
+export function setFormatCurrency(code) {
+  if (code === currency) return
+  currency = code
+  rebuild()
+}
+
+/** For the one place that spells the currency out as text rather than
+ * formatting an amount in it: the printed label. */
+export function currencyCode() {
+  return currency
+}
+
+function rebuild() {
+  cache = build(overrides?.numberLocale ?? locale)
 }
 
 const decimal = (value) => cache.decimal.format(value)
@@ -72,7 +95,8 @@ export function formatPrice(value) {
   return cache.price.format(value)
 }
 
-/** A price with no currency symbol, for a label that spells out "AZN" itself. */
+/** A price with no currency symbol, for the label that spells the currency
+ * code out itself. */
 export function formatAmount(value) {
   return cache.amount.format(value)
 }
@@ -93,6 +117,8 @@ export function formatValue(value, format) {
       return formatCurrencyCompact(value)
     case 'currency0':
       return formatCurrency(value)
+    case 'price':
+      return formatPrice(value)
     case 'percent':
       return formatPercent(value)
     default:

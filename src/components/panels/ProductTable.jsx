@@ -5,12 +5,6 @@ import { barcodeValue } from "../../lib/barcode";
 import { formatNumber, formatPrice } from "../../lib/format";
 import { useTranslation } from "../../i18n/context";
 
-/**
- * `selection` and `showBarcode` are both optional: Sales passes neither and
- * gets the plain three-column list, Inventory passes both and gets a checkbox
- * in front of every row and the label number behind it. The columns stay in
- * one component so the two pages keep reading identically.
- */
 export function ProductTable({
   products,
   title,
@@ -56,7 +50,9 @@ export function ProductTable({
                 >
                   <Checkbox
                     checked={selection.allChecked}
-                    indeterminate={selection.someChecked && !selection.allChecked}
+                    indeterminate={
+                      selection.someChecked && !selection.allChecked
+                    }
                     onChange={selection.onToggleAll}
                     label={t("inv.selectAll")}
                   />

@@ -2,7 +2,8 @@ import { useId, useState } from 'react'
 import { Modal, ModalFooter } from '../ui/Modal'
 import { Button } from '../ui/Button'
 import { NumberStepper } from '../ui/NumberStepper'
-import { IconAlert, IconChevronDown, IconPlus, IconTrash } from '../Icons'
+import { IconAlert, IconPlus, IconTrash } from '../Icons'
+import { Select } from '../ui/Select'
 import { formatNumber, formatPrice } from '../../lib/format'
 import {
   bagSkuStem,
@@ -334,22 +335,19 @@ export function ProductFormDialog({
           </Field>
 
           <Field label={t('dlg.category')}>
-            <span className="relative mt-1 block">
-              <select
-                className="h-9 w-full cursor-pointer appearance-none rounded-lg border border-line bg-surface-2 px-3 pr-8 text-[13px] text-ink-1 focus:bg-surface-1"
+            <span className="mt-1 block">
+              <Select
+                label={t('dlg.category')}
                 value={form.category}
-                onChange={(event) => {
-                  setForm({ ...form, category: event.target.value })
+                onChange={(value) => {
+                  setForm({ ...form, category: value })
                   setError(null)
                 }}
-              >
-                {categories.map((id) => (
-                  <option key={id} value={id}>
-                    {t(`category.${id}`)}
-                  </option>
-                ))}
-              </select>
-              <IconChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-3" />
+                options={categories.map((id) => ({
+                  value: id,
+                  label: t(`category.${id}`),
+                }))}
+              />
             </span>
           </Field>
 

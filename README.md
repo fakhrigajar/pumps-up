@@ -43,9 +43,12 @@ The charts are hand-drawn SVG (no charting dependency) in
 - **Validated palettes.** Categorical slots and the single-hue ordinal ramp were
   checked for lightness band, chroma, colorblind separation and surface contrast
   in *both* modes — the dark steps are chosen for the dark surface, not flipped.
-- **One series, one color.** The revenue trend and the best-sellers bars each
-  show a single nominal series, so there's nothing for a second hue to
-  distinguish.
+- **A hue per series, and a legend whenever there are two.** The best-sellers
+  and category bars show a single nominal series, so there is nothing for a
+  second hue to distinguish; revenue-against-profit is two, and carries both a
+  legend and its own end labels. Two measures never get two y-scales — where
+  they share a unit they share the axis, and where they do not they get
+  separate charts.
 - **Marks:** ≤24px bars with a 4px rounded data-end square at the baseline, 2px
   lines, a 2px surface gap between stacked segments, a 2px surface ring on
   markers, hairline solid gridlines.
@@ -93,27 +96,87 @@ gutter clips the longer one.
 ## Dashboard
 
 [src/pages/Dashboard.jsx](src/pages/Dashboard.jsx) reads only real state —
-`products`, `sales` and the activity log, all lifted in
-[App.jsx](src/App.jsx) — never generated data. The **Period** filter (last
-3/6/12 months) scopes the KPI tiles and the best-sellers panel; the revenue
-chart is the deliberate exception, always the current calendar month
-regardless of that filter.
+`products`, `sales`, the register `sessions`, the accounts and the activity
+log, all lifted in [App.jsx](src/App.jsx) — never generated data. Its
+selectors live in [src/data/dashboard.js](src/data/dashboard.js).
 
-- **KPI tiles** — Revenue, Products sold, Gross margin, Average order
-  value — compare the current half of the selected period against the half
-  before it (`selectRealKpis` in [src/data/erp.js](src/data/erp.js), built on
-  `splitRangeInHalf` in [src/lib/dates.js](src/lib/dates.js)). "Products sold"
-  counts sale lines: the catalogue has no notion of a multi-line order, so one
-  sold product is what "an order" now means.
-- **Revenue** charts daily revenue for the current month, day 1 through
-  today, with a month-to-date total in the footer.
-- **Best-selling products** ranks by units actually sold in the selected
-  period (`selectBestSellers`), not a shipped-volume estimate.
-- **Out of stock** lists every catalogue listing with `stock === 0` — a
-  snapshot, not scoped to the period.
-- **Recent sales** is the newest entries in `sales`, one row per product
-  sold (not a multi-line order): product, its current stock, sale value, and
-  cash/card via the shared [PaymentTag](src/components/ui/PaymentTag.jsx).
+It is built in five bands, each with a heading saying which question the next
+few panels answer, because two dozen cards in a row is a wall rather than an
+argument. Only the middle bands follow the **Period** filter (last 3/6/12
+months): today is today whatever the filter says, and the stock figures are a
+count of the shelves right now.
+
+Almost every figure comes off the sales ledger, which carries the price a row
+sold at, the cost it was bought at, the checkout it belonged to and who rang
+it up. That is deliberate — one list answering every question is one list to
+keep honest, and two panels on the same screen cannot quietly disagree about a
+day. The one exception is the hour of day: the ledger is dated to the day, and
+the clock lives on the shift.
+
+### Today
+
+- **Revenue, Profit, Orders, Items sold, Average order** — each against
+  yesterday, because a day on its own is a number without a size. When
+  yesterday sold nothing the tile says so instead of showing a percentage: a
+  change from zero is not a large number, it is not a number.
+- **Registers** — a card per cashier, open or closed, with the shift's takings
+  so far. A closed till is a card that says so rather than a card that is
+  missing: "three cashiers, one open" is the state of the shop floor, and it
+  cannot be read off a list containing only what is open.
+
+### Performance
+
+- **KPI tiles** — Revenue, Products sold, Gross margin, Average order value —
+  compare the current half of the selected period against the half before it
+  (`selectRealKpis` in [src/data/erp.js](src/data/erp.js), built on
+  `splitRangeInHalf` in [src/lib/dates.js](src/lib/dates.js)).
+- **Revenue and profit** plots both day by day on **one** axis
+  ([TrendLines](src/components/charts/TrendLines.jsx)). They share it because
+  they share a unit, and the gap between the two lines is itself the thing
+  being read; a second y-scale would let that gap say whatever the scales were
+  chosen to make it say. End labels are pushed apart when the lines finish
+  close together.
+- **Month by month**, **Sales by hour** and **Sales by weekday** are the same
+  component ([Columns](src/components/charts/Columns.jsx)). A second series
+  stands *beside* the first rather than on top of it: stacking would make the
+  total readable and the parts not, and how the two compare is the question.
+  The hover target is the whole column slot rather than the bar, so a quiet
+  hour is as easy to inspect as a busy one — the mark for an hour that took
+  nothing is a few pixels tall and nobody can point at it.
+
+### What is selling
+
+- **Best-selling products** ranks by units actually sold in the period.
+- **Slowest movers** is the other end of the same list, and is ranked off the
+  *catalogue* rather than the ledger: ranking the ledger can only rank things
+  that sold at least once, and something that sold nothing is exactly what
+  this panel is for. Ties at zero break on stock on hand — of two products
+  that sold nothing, the one with forty on the shelf is the one tying up
+  money. It is a list rather than a chart because a row of empty bars would
+  say less than the two numbers that matter.
+- **Top categories** folds sales into what kind of thing they were.
+- **Top cashiers** ranks by revenue, with profit, orders and items beside it.
+  Revenue draws the bar because it is the one figure that means the same thing
+  for everybody; three bars a row would be a chart nobody can read across.
+
+### Stock
+
+- **Inventory value** at purchase cost, and **Profit in stock** — a ceiling
+  rather than a forecast (nothing discounts, nothing is left over), which is
+  why it is labelled an estimate.
+- **Product variants** counts colours and sizes separately, the grain the
+  catalogue is actually kept at; **Active products** is what has anything on
+  hand.
+- **Running low** draws stock against the threshold rather than against the
+  biggest row, so the bar means the same thing every time it is drawn: a
+  nearly-empty bar is nearly out of stock, not merely today's smallest number.
+- **Out of stock** lists every listing with `stock === 0`.
+
+### Latest activity
+
+- **Recent sales** is the newest entries in `sales`, one row per product sold:
+  product, its current stock, sale value, and cash/card via the shared
+  [PaymentTag](src/components/ui/PaymentTag.jsx).
 - **Activity log** records one entry per product-level action, this session
   only, newest first — add, edit, delete, return, sell — each a plain
   statement ("Product was sold.") plus which product and when. It is
@@ -398,6 +461,45 @@ and the buttons only write what an edge or a centre works out to.
   limit under the cursor mid-keystroke. Changes made by dragging arrive in the
   same fields.
 
+## Signing in
+
+[src/pages/Login.jsx](src/pages/Login.jsx) is the way in, for both roles. It is
+the whole window rather than a dialog over the app: there is nothing behind it
+to look at yet, and a shop screen left on it all morning should read as closed
+rather than as an app with a box on top. A wrong pair says only that the pair
+does not match an account — naming which half was wrong would tell whoever is
+guessing which half to keep.
+
+The signed-in account is held as a *login* rather than as a copy of the record
+([useSessionState](src/auth/useSessionState.js)) and resolved against the live
+user list on every render. That is what keeps a session honest: an account
+edited on the users screen is immediately the account signed in, and one deleted
+mid-session resolves to nobody, which drops that browser back to the sign-in
+page rather than leaving a ghost holding a deleted user's permissions. The login
+is remembered in local storage the way the theme is, so a refresh does not sign
+anybody out.
+
+### Permissions
+
+Access lives in one place: each page in [src/navigation.js](src/navigation.js)
+carries its own `roles`. The sidebar builds itself from that list and the router
+checks against it before rendering, so a page cannot be reachable in one and
+closed in the other, and a section with nothing in it for this role is not an
+empty heading — it is not a section this role has. **Settings** sits in the
+sidebar's footer rather than in a section, but it is a page like any other and
+carries the same guest list, so the button is never on screen for a role that
+would be turned away by pressing it.
+
+- **Administrators** get every screen, every cashier's shifts, and the settings
+  the whole shop runs on.
+- **Cashiers** get the till and their own shifts, and nothing that shapes the
+  catalogue, the accounts or the numbers.
+
+`current` is answered against the role on every render rather than only when a
+nav button is pressed, so signing out as an admin and in as a cashier cannot
+leave an admin page on screen. A cashier lands on the till, because it is the
+first page their role has.
+
 ## Sales
 
 [src/pages/Sales.jsx](src/pages/Sales.jsx) shows the same product list with the
@@ -424,13 +526,122 @@ which would otherwise confirm a sale at no charge.
 
 Confirming a sale also records it — see below.
 
+### The sale drawer
+
+The basket runs along the bottom of the till
+([SalePanel](src/components/panels/SalePanel.jsx)). Collapsed it is a status
+bar: a couple of lines, the total, and the button that ends the sale. The
+handle centred on its top edge pulls it open into a working surface — tall
+enough to check a long order line by line, and wide enough to lay those lines
+out in two or three columns rather than one tall list. The handle again, or
+Escape, shuts it.
+
+It grows *over* the product table rather than pushing it up: the page keeps
+the padding it reserved for the collapsed strip, so nothing behind the drawer
+moves while it opens and the row somebody was about to tap is still where they
+left it when it shuts. The height is capped rather than fitted to the contents
+so the same pull always gives the same drawer — adding a product while it is
+open must not shift the Sell button out from under a finger.
+
+The handle lives *outside* the panel's own box, because the panel has to clip
+its contents while the height animates and would otherwise clip the grip along
+with them.
+
+One cascade note, since it cost an afternoon: `.theme-transition *` in
+[index.css](src/index.css) sets a transition on every element so a theme swap
+fades. Written as a plain rule it landed after Tailwind's utilities and,
+matching on the same specificity, beat every one of them — the drawer asked
+for `transition-[height]`, got the colour fade instead, and snapped open with
+no animation at all. The default now sits in `@layer base`, so it still
+reaches everything that asks for nothing while a component that names its own
+transition gets the one it asked for. The `prefers-reduced-motion` override is
+deliberately *not* layered: it has to outrank the utilities too, or a
+component's own animation would still run for somebody who asked the whole
+system to stop moving.
+
+## The register
+
+A cashier sells against an open till. Above the search bar
+([Sales.jsx](src/pages/Sales.jsx)) sits the shift: what the register is doing,
+what it has taken so far, and the one button that changes it. Closed is the
+default — the product rows are dimmed and unclickable, **Sell** is disabled, and
+the table's own hint says why, so a locked screen explains itself rather than
+silently ignoring clicks. **Open register** starts a session and the button
+becomes **Close register**; closing asks first, because it ends the shift rather
+than pausing it, and opening again starts a second session rather than resuming
+the first. An admin ringing something up is not on a shift and is not asked to
+start one.
+
+A session ([src/data/register.js](src/data/register.js)) records who opened it,
+when it opened and closed, and every order rung up on it. An *order* is one
+checkout — everything on the counter paid for in one go — which is why it holds
+lines rather than being one: the sales ledger keeps a row per product because
+that is what a report is read by, while a shift keeps the checkout whole because
+"42 orders" and "68 items" are different numbers a shop cares about separately.
+Confirming a sale writes both from the same data, so an order cannot appear in
+one and not the other.
+
+Sessions are also the only place a time of day is recorded. The ledger is dated
+to the day, which is all a monthly report needs; knowing the counter is busy at
+six in the evening needs the clock, and that is a property of the shift.
+
+[src/pages/Register.jsx](src/pages/Register.jsx) lists shifts, newest first,
+with opening and closing times, orders, items and revenue; opening a row shows
+every product that crossed the counter on it, folded to one line each — the same
+product rung up in four orders is one line of four. The same screen serves both
+roles, because the difference between them is which shifts exist as far as they
+are concerned rather than what a shift looks like: an admin is handed every
+cashier's and a filter to pick between them, a cashier is handed their own and
+no filter. An open shift shows **Open now** instead of a closing time.
+
+Under each of the two times sits how it compares to the hours the shop keeps
+(**Settings** → *Store working hours*), in parentheses and coloured: `09:00
+(On Time)`, `08:55 (Early)`, `09:12 (Late)`. The two ends disagree about which
+direction is the bad one, and that disagreement is the point of them — a till
+opened *before* the doors is the shop ready for them, while one shut *before*
+closing time is the shop giving up early:
+
+| | earlier than the hour | on it | later |
+|---|---|---|---|
+| **Opened** | Early — green | On Time — green | **Late — red** |
+| **Closed** | **Closed Early — red** | On Time — green | Late Close — green |
+
+"On it" is the couple of minutes either side (`ON_TIME_GRACE_MINUTES`): a till
+is opened by a person with a key rather than by a clock, and without the grace
+"On Time" would be a verdict almost no shift ever earned. The hours being
+compared against are printed once at the top of the page, rather than left to
+be inferred from the colour of forty cells.
+
+The seeded shifts are built from the same ledger the reports are built from, so
+a day showing 12 sales on the reports screen shows those 12 sales spread across
+its cashiers' shifts rather than a second, disagreeing history. The generator is
+seeded, so the same catalogue produces the same shifts on every reload — a
+heatmap that rearranged itself on refresh would be describing the generator
+rather than the shop. A seeded shift is a *day at the counter* rather than the
+gap between its first and last customer: it opens around the shop's opening
+hour and is counted around its closing one, drifting either side, which is what
+gives the punctuality column something to be about. Whatever the drift, a shift
+can never be shut before it rang somebody up — the takings are what the clock
+has to contain.
+
 ## Sales report
 
 [src/pages/Reports.jsx](src/pages/Reports.jsx) (the **Reports** module) lists
 what was sold over a chosen period: product, purchase cost, selling price,
-**sold for**, quantity, and cash/card. Below the list, **Total sales** and
-**Total profit** cards total exactly the rows shown — sales from `soldFor`
-(what was actually charged, not the list price), profit against purchase cost.
+**sold for**, quantity, and cash/card. Three cards total exactly the rows shown:
+**Total sales** from `soldFor` (what was actually charged, not the list price),
+**Total profit** against purchase cost, and **Total orders** — customers rather
+than items.
+
+That third one cannot be a row count. The ledger keeps a row per *product*, so
+a basket of three is three rows and one order; counting rows would count items
+under an orders heading. Each ledger row therefore carries the checkout it
+belonged to (`orderId`), and the card counts the distinct ones. One id is
+stamped on every row a sale produces *and* on the shift order it becomes, so
+the figure is read off the same filtered list as the other two cards, and it
+counts a sale once whether it was rung up on an open register or by an admin
+with no shift at all. The seeded ledger is stamped the same way, from the
+grouping the shift generator already had to make.
 
 It opens on **today**, the figure a till is asked for most. The date button
 opens [CalendarPicker](src/components/ui/CalendarPicker.jsx), which selects a
@@ -454,6 +665,27 @@ Dates are passed around as `"YYYY-MM-DD"` strings, never `Date` objects — a
 sale happened on a calendar day, not an instant, and a string carries no
 timezone to shift it across midnight. Being zero-padded and big-endian, they
 also compare chronologically as plain strings, so a range test needs no parsing.
+
+### When the counter is busy
+
+Above the ledger,
+[SalesHeatmap](src/components/charts/SalesHeatmap.jsx) draws the selected period
+as a grid: a row per day (or per cashier), a cell per hour, ink for takings.
+Magnitude is the whole job, so the scale is one hue light to dark — the same
+five blues the ordinal charts draw from, themed for both modes. An hour with
+nothing in it stays at the surface colour rather than taking the lightest blue,
+so "closed" and "open but quiet" are not the same mark and the shape of a
+working day reads off the grid.
+
+The hour axis is taken from the shifts themselves rather than fixed at
+midnight-to-midnight — the question is when the counter was busy *while it was
+open*, and two thirds of a 24-hour axis would be empty by definition. The five
+bands are of what is on screen, so the darkest cell means the busiest hour in
+view. **Shade by** switches between revenue and orders, **Rows** between days and
+cashiers, hovering a cell gives the hour with both numbers, and the table view
+lists the period's hours as totals. A month of days is taller than the card, so
+the rows scroll — with the hour axis left behind outside the scrolling box,
+since an axis that scrolled away would leave unlabelled columns.
 
 ### Export
 
@@ -549,29 +781,76 @@ description next to it, when the account is created.
 There is no edit — a record is created or removed. Passwords sit in plain memory
 exactly as the catalogue does, and the seeded ones are placeholders: this is
 session state in the browser, so nothing here survives a reload. Real sign-in
-needs a backend that stores a hash, never the password, and the sign-in screen
-itself is not built yet — this screen creates the accounts it will check against.
+needs a backend that stores a hash, never the password; these are the accounts
+the sign-in screen below checks against, compared in the browser.
+
+## Settings
+
+[src/pages/Settings.jsx](src/pages/Settings.jsx) is the back office's own
+screen, and admins only — what the shop is priced in and when it opens is not
+the till's to change.
+
+**Currency** picks what every price, total and printed label is written in.
+It reaches them through [src/lib/format.js](src/lib/format.js) rather than
+being threaded down as a prop: a price is formatted in some forty places and
+none of them has an opinion about the currency — the shop does. The symbol is
+drawn by `Intl` from the code, so a currency is never spelled out twice, and
+the field shows a sample amount so the choice is visible before it is made.
+
+**Store working hours** set the opening and closing times a shift is judged
+against on the [Register](#the-register) page. They are held as `"HH:MM"`
+strings, because that is what a time input speaks and what a person reads;
+minutes past midnight is what the arithmetic wants, and
+[storeSettings.js](src/lib/storeSettings.js) converts between them. The time
+field is the one native input kept in the app: a time is typed digit by digit
+and stepped with the arrow keys, and no drawn-from-scratch pair of dropdowns
+does either as well. A half-typed time is not a time, so the shop keeps the
+last one it was actually set to while the field goes on showing whatever is
+being typed.
+
+Both apply the moment they change, the way the theme and the language do —
+there is one right answer and no draft of it worth keeping — and both persist
+in local storage under `pumpsup.settings`. Anything read back from there is
+treated as a suggestion and normalized: a blob written by an older version, or
+edited by hand, must not be able to hand the app a currency `Intl` cannot
+format or a closing time that is not a time.
+
+**Username** and **Password** are the opposite kind of setting: they are forms,
+submitted and answered, because a half-typed password is not a password. The
+login is validated by the same rules the users screen uses, and an account is
+not a clash with itself. Changing it would ordinarily sign you out — the
+session holds a *login*, and the old one stops resolving the moment the list is
+rewritten — so the rename moves the session key with it. The password change
+asks for the current password even though the account is already signed in: a
+screen left unlocked is the ordinary case in a shop, and it is the one thing
+standing between a passer-by and the back office.
 
 ## Layout
 
 ```
 src/
   App.jsx                 shell: sidebar + topbar + page, product + sales state
-  navigation.js           nav model
+  navigation.js           nav model, and which roles may open each page
+  auth/                   who is signed in
+  data/register.js        register sessions: shifts, orders, seeded history
+  data/dashboard.js       what the dashboard reads the shop by
   theme/                  ThemeProvider + useTheme
   i18n/                   LanguageProvider, dictionaries, az format overrides
   labels/                 LabelTemplateProvider + useLabelTemplate
+  settings/               StoreSettingsProvider + useStoreSettings
   data/erp.js             seeded demo dataset, sales history and selectors
   data/users.js           accounts, roles and the rules a login must satisfy
   lib/                    formatting, calendar dates, axis ticks, zip/exporters
   lib/barcode.js          Code 11 encoding + the label number derived from an id
   lib/labels.js           label size and print-run limits
+  lib/layout.js           the sale panel's collapsed and expanded heights
   lib/labelTemplate.js    the saved label design: model, defaults, normalizing
+  lib/storeSettings.js    currency, working hours, and the clock arithmetic
   components/
-    charts/               SVG charts, legend, tooltip, card shell
-    panels/               recent sales, out of stock, activity log, product list, sale, users, labels
+    charts/               SVG charts (trend lines, columns, ranked bars, heatmap), legend, tooltip, card shell
+    panels/               recent sales, stock alerts, registers, cashiers, movers, activity log, product list, sale, users, labels
     ui/                   Card, Button, Modal, StatusPill, Calendar, Export, Barcode, Checkbox
-  pages/                  Dashboard, Inventory, Sales, Reports, Activity, Users, Tools, placeholder
+  pages/                  Dashboard, Inventory, Sales, Reports, Activity, Users, Tools, Register, Settings, Login
 ```
 
 The Dashboard's Period filter sits above everything it scopes; see
@@ -591,8 +870,10 @@ relative to *today* rather than a fixed month, so the report always opens on a
 day that has something in it. Dashboard, Inventory, Sales and Reports are built
 out; the remaining nav modules render a placeholder that says so.
 
-Money is formatted as **AZN** (₼) throughout, from the single `currency: 'AZN'`
-in [src/lib/format.js](src/lib/format.js) — `currencyDisplay: 'narrowSymbol'`
-is what gets the ₼ glyph instead of the "AZN" code in locales whose default
-currency style falls back to it. Switching the app to another currency is a
-change to that one field.
+Money is formatted from a single currency held in
+[src/lib/format.js](src/lib/format.js), defaulting to **AZN** (₼) and set from
+[Settings](#settings) — `currencyDisplay: 'narrowSymbol'` is what gets the ₼
+glyph instead of the "AZN" code in locales whose default currency style falls
+back to it. Changing it rebuilds the formatters once and every screen follows,
+including the printed label, which spells the code out rather than formatting
+an amount in it.
