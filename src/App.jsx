@@ -15,6 +15,7 @@ import { ModulePlaceholder } from "./pages/ModulePlaceholder";
 import { canOpen, NAV_ITEMS, pagesFor } from "./navigation";
 import { useTranslation } from "./i18n/context";
 import {
+  findByBarcode,
   mulberry32,
   products as initialProducts,
   salesHistory as initialSales,
@@ -30,6 +31,9 @@ import { SessionContext } from "./auth/context";
 import { useSessionState } from "./auth/useSessionState";
 import { todayIso } from "./lib/dates";
 import { useMeasure } from "./lib/useMeasure";
+import { useBarcodeScanner } from "./lib/useBarcodeScanner";
+import { errorBeep } from "./lib/beep";
+import { useToast } from "./toast/context";
 import { SALE_PANEL_HEIGHT } from "./lib/layout";
 
 /**
@@ -68,8 +72,14 @@ function describeChanges(before, after) {
 
 export default function App() {
   const { t } = useTranslation();
+  const { notify } = useToast();
   const [current, setCurrent] = useState("dashboard");
   const [navOpen, setNavOpen] = useState(false);
+
+  // The last code the scanner sent, wrapped in a fresh object every time so
+  // that scanning the same label twice is still two scans for the till to
+  // react to — it watches the object, not the string inside it.
+  const [lastScan, setLastScan] = useState(null);
 
   const [sidebarFooterRef, , sidebarFooterHeight] = useMeasure();
 
@@ -90,6 +100,24 @@ export default function App() {
       at: Date.now(),
     };
     setActivityLog((log) => [entry, ...log]);
+  }, []);
+
+  // Everything logged up to this id has been seen. A watermark rather than a
+  // read flag on every entry is what keeps the two honest with each other:
+  // marking the log read is one number to move, and an entry is unread on its
+  // own terms — it was issued a higher id than the last one looked at, so an
+  // entry logged while the panel is open cannot be swept up by it.
+  const [readThroughId, setReadThroughId] = useState(0);
+
+  const unreadActivity = activityLog.filter(
+    (entry) => entry.id > readThroughId,
+  ).length;
+
+  /** Opening the panel is reading it: the serial has already stamped every
+   * entry that exists, so the watermark can move to it without consulting the
+   * log itself. */
+  const markActivityRead = useCallback(() => {
+    setReadThroughId(logSerial.current);
   }, []);
 
   const addProducts = useCallback(
@@ -323,6 +351,52 @@ export default function App() {
     setNavOpen(false);
   }
 
+  /**
+   * A scan, from wherever in the app it was made.
+   *
+   * The scanner is a keyboard, and a keyboard is not attached to a screen —
+   * so this is answered here rather than on the till, and the till is where
+   * it lands whatever was in front of the cashier at the time. The page and
+   * the basket are set in the same handler and so in the same render: the
+   * transition is one frame with the product already on it, not a hop
+   * followed by an add.
+   *
+   * `addToSale` is the same call a tapped row makes, which is what keeps a
+   * second scan of something raising its quantity rather than opening a
+   * duplicate line, and leaves the totals to follow from the lines.
+   */
+  function onScan(code) {
+    navigate("sales");
+    setLastScan({ code });
+
+    const product = findByBarcode(productList, code);
+    const tillClosed = signedIn?.role === "cashier" && !openShift;
+    const inSale = saleLines.find((line) => line.sku === product?.sku)?.qty ?? 0;
+
+    // A till a cashier has not opened takes nothing by scanner either, but it
+    // says so on the screen it has just moved them to rather than swallowing
+    // the scan — as does a code nothing answers to, and a product with none
+    // left to sell. Silence is indistinguishable from a scanner that missed.
+    const problem = !product
+      ? t("scan.notFound")
+      : tillClosed
+        ? t("reg.closedHint")
+        : inSale >= product.stock
+          ? t("scan.noStock", { name: product.name })
+          : null;
+
+    if (problem) {
+      notify(problem, "error");
+      errorBeep();
+      return;
+    }
+
+    addToSale(product);
+  }
+
+  // Live for as long as somebody is signed in, on every page there is.
+  useBarcodeScanner(onScan, { enabled: Boolean(signedIn) });
+
   if (!signedIn) {
     return <Login onSignIn={session.signIn} />;
   }
@@ -343,6 +417,13 @@ export default function App() {
           title={t(active.labelKey)}
           onOpenNav={() => setNavOpen(true)}
           activityLog={activityLog}
+          unreadActivity={unreadActivity}
+          onActivityRead={markActivityRead}
+          onViewActivity={
+            canOpen("activity", signedIn.role)
+              ? () => navigate("activity")
+              : null
+          }
         />
 
         {/* Takes what the topbar leaves and no more. A page that wants to be
@@ -372,6 +453,7 @@ export default function App() {
               onClear={clearSale}
               onSell={completeSale}
               barHeight={sidebarFooterHeight || SALE_PANEL_HEIGHT}
+              lastScan={lastScan}
               register={{
                 required: signedIn.role === "cashier",
                 session: openShift,

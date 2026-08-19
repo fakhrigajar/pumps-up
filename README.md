@@ -295,26 +295,36 @@ symbol, with its number underneath.
 
 **The number is derived, not stored.** `barcodeValue` in
 [src/lib/barcode.js](src/lib/barcode.js) folds the product id through two
-seeded FNV-1a passes into 13 digits. Derived because it is then a pure function
+seeded FNV-1a passes into digits. Derived because it is then a pure function
 of the id — a product created today and the same product after a reload carry
 the same number with no field to keep in sync, and a label printed months ago
 still points at the row it came from. It has to be digits at all because
-**Code 11 encodes only 0–9 and the dash**, and a product id like
-`PUNIKBLU192337` is mostly letters. Two hash passes rather than one: a single
-32-bit pass is about 9 digits of spread, and 13 digits of label deserve 13
-digits of room.
+**EAN-13 encodes nothing else**, and a product id like `PUNIKBLU192337` is
+mostly letters. Two hash passes rather than one: a single 32-bit pass is about
+9 digits of spread, and a label this long deserves the room.
 
-[src/lib/barcode.js](src/lib/barcode.js) also holds the symbology itself. Code
-11 gives every character five elements — bar, space, bar, space, bar — each
-narrow (1 unit) or wide (2), separates characters with a one-unit space, and
-wraps the lot in a start/stop character. `code11Bars` returns the black bars in
-symbol units and [Barcode](src/components/ui/Barcode.jsx) lays them into an SVG
-whose viewBox is those same units, so CSS can size the symbol freely: with
-`preserveAspectRatio="none"` the bars get taller or shorter without the
-narrow-to-wide ratio a scanner reads ever changing. The optional C and K check
-digits of the spec are left off, so the digits printed under the bars are
-exactly the digits encoded in them. Code 11 is an uncommon symbology — a
-scanner generally has to have it switched on explicitly.
+Only eleven of the thirteen are the hash's to pick. The first is a fixed `2`,
+because GS1 reserves 20–29 for the codes a shop assigns itself and a shelf
+label has no business colliding with some real product on the same counter.
+The last is a **check digit** — weights alternating 1 and 3 across the twelve
+before it, taken up to the next multiple of ten — which is what lets a scanner
+reject a misread instead of reporting a neighbouring product.
+
+[src/lib/barcode.js](src/lib/barcode.js) also holds the symbology itself.
+EAN-13 is 95 modules of equal width: a leading guard, six digits, a centre
+guard, six more, a closing guard, seven modules to a digit. Only twelve are
+drawn — the thirteenth is the *first*, and it is carried in the parity of the
+left-hand six, each set in one of two encodings whose six-way pattern names
+it. `ean13Bars` merges runs of set modules into black bars and
+[Barcode](src/components/ui/Barcode.jsx) lays them into an SVG whose viewBox is
+those same modules, so CSS can size the symbol freely: with
+`preserveAspectRatio="none"` the bars get taller or shorter without the widths
+a scanner measures against each other ever changing. The quiet zones — eleven
+modules of clear paper before the symbol and seven after — are inside that
+viewBox rather than left to the caller's padding, because they are part of
+what a scanner reads. Anything that is not a well-formed EAN-13, a failed
+check digit included, returns `null` and renders nothing, rather than a symbol
+that scans as the wrong product or that a scanner throws away in silence.
 
 **Printing.** Ticked rows feed
 [PrintLabelsDialog](src/components/panels/PrintLabelsDialog.jsx), which lists
@@ -841,7 +851,7 @@ src/
   data/erp.js             seeded demo dataset, sales history and selectors
   data/users.js           accounts, roles and the rules a login must satisfy
   lib/                    formatting, calendar dates, axis ticks, zip/exporters
-  lib/barcode.js          Code 11 encoding + the label number derived from an id
+  lib/barcode.js          EAN-13 encoding + the label number derived from an id
   lib/labels.js           label size and print-run limits
   lib/layout.js           the sale panel's collapsed and expanded heights
   lib/labelTemplate.js    the saved label design: model, defaults, normalizing

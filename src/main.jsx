@@ -5,6 +5,7 @@ import { ThemeProvider } from './theme/ThemeProvider.jsx'
 import { LanguageProvider } from './i18n/LanguageProvider.jsx'
 import { StoreSettingsProvider } from './settings/StoreSettingsProvider.jsx'
 import { LabelTemplateProvider } from './labels/LabelTemplateProvider.jsx'
+import { ToastProvider } from './toast/ToastProvider.jsx'
 import './index.css'
 
 createRoot(document.getElementById('root')).render(
@@ -13,7 +14,9 @@ createRoot(document.getElementById('root')).render(
       <ThemeProvider>
         <StoreSettingsProvider>
           <LabelTemplateProvider>
-            <App />
+            <ToastProvider>
+              <App />
+            </ToastProvider>
           </LabelTemplateProvider>
         </StoreSettingsProvider>
       </ThemeProvider>

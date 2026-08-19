@@ -94,10 +94,15 @@ export function SalePanel({
         />
       </button>
 
+      {/* `tabIndex={-1}` makes this focusable without putting it in the tab
+          order: it is a place to be sent — a scan lands here — rather than a
+          stop on the way through the page. Sent focus is not keyboard focus,
+          so no ring is drawn for it. */}
       <div
         ref={innerRef}
+        tabIndex={-1}
         style={{ height: expanded ? SALE_PANEL_EXPANDED : height }}
-        className="flex overflow-hidden border-t border-line bg-surface-1 transition-[height] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
+        className="flex overflow-hidden border-t border-line bg-surface-1 outline-none transition-[height] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
       >
         <div className="flex min-w-0 flex-1 flex-col px-4 pt-2 sm:px-6">
           <div className="flex shrink-0 items-baseline gap-2">

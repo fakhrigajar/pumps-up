@@ -1,16 +1,18 @@
 import { useMemo } from "react";
-import { code11Bars } from "../../lib/barcode";
+import { ean13Bars } from "../../lib/barcode";
 
 const HEIGHT = 40;
 
 /**
- * A Code 11 symbol as inline SVG. The viewBox is in symbol units, so the
- * element scales to whatever box CSS gives it — `preserveAspectRatio="none"`
- * lets height and width be set independently, which changes how tall the bars
- * are without touching the 1:2 narrow-to-wide ratio a scanner reads.
+ * An EAN-13 symbol as inline SVG. The viewBox is in modules, so the element
+ * scales to whatever box CSS gives it — `preserveAspectRatio="none"` lets
+ * height and width be set independently, which changes how tall the bars are
+ * without touching the widths a scanner measures against each other. The
+ * quiet zones are inside that viewBox, so the clear paper either side scales
+ * with the symbol instead of being the caller's problem.
  */
 export function Barcode({ value, className = "", color = "currentColor" }) {
-  const symbol = useMemo(() => code11Bars(value), [value]);
+  const symbol = useMemo(() => ean13Bars(value), [value]);
   if (!symbol) return null;
 
   return (

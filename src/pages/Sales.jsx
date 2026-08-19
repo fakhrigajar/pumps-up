@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ProductSearch } from "../components/panels/ProductSearch";
 import { ProductTable } from "../components/panels/ProductTable";
 import { SaleBadge, SalePanel } from "../components/panels/SalePanel";
@@ -23,10 +23,12 @@ export function Sales({
   onSell,
   barHeight,
   register,
+  lastScan,
 }) {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [selling, setSelling] = useState(false);
+  const panelRef = useRef(null);
 
   // A till that has to be opened is a cashier's; an admin ringing something up
   // is not on a shift and is not asked to start one.
@@ -54,6 +56,24 @@ export function Sales({
   );
 
   const quantityOf = (sku) => lines.find((line) => line.sku === sku)?.qty ?? 0;
+
+  /**
+   * The till catching up with a scan the app answered above it.
+   *
+   * The code goes into the search box, which makes what the scanner actually
+   * sent visible on screen: a scan that finds nothing leaves its digits there
+   * to be read against the label, and the table filters to the row it matched
+   * when it found one. That also overwrites whatever had been typed to find
+   * the last product — the stray first character a scan aimed at a focused
+   * field leaves behind before the burst is recognised as one included. Then
+   * the basket takes focus, so what the screen points at is the line that
+   * just changed, whether this page was already open or has just arrived.
+   */
+  useEffect(() => {
+    if (!lastScan) return;
+    setQuery(lastScan.code);
+    panelRef.current?.focus();
+  }, [lastScan]);
 
   return (
     <>
@@ -88,6 +108,7 @@ export function Sales({
       </div>
 
       <SalePanel
+        innerRef={panelRef}
         height={barHeight}
         lines={saleLines}
         payment={payment}

@@ -134,6 +134,28 @@ export function filterProducts(products, query) {
   );
 }
 
+/**
+ * The one product a scanner just read, or null.
+ *
+ * Exact and whole-string where `filterProducts` is fuzzy and partial: a
+ * scanner reports the number under the bars with no ambiguity to resolve, so
+ * a near miss here is a wrong product rung up rather than a shorter list to
+ * choose from.
+ *
+ * This is the seam a server goes behind. The catalogue is in memory today and
+ * the code is derived from the id rather than stored beside it, so the lookup
+ * is a walk of the list; when products come from a backend this becomes the
+ * request by its barcode and everything above it changes only by having to
+ * wait for the answer.
+ */
+export function findByBarcode(products, code) {
+  const digits = String(code).trim();
+  if (!digits) return null;
+  return (
+    products.find((product) => barcodeValue(product.sku) === digits) ?? null
+  );
+}
+
 export const SHOE_SIZES = [36, 37, 38, 39, 40];
 
 export const categories = ["Shoe", "Bag"];

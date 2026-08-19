@@ -5,7 +5,14 @@ import { ActivityBell } from './ActivityBell'
 import { IconMenu } from './Icons'
 import { useTranslation } from '../i18n/context'
 
-export function Topbar({ title, onOpenNav, activityLog }) {
+export function Topbar({
+  title,
+  onOpenNav,
+  activityLog,
+  unreadActivity,
+  onActivityRead,
+  onViewActivity,
+}) {
   const { t } = useTranslation()
 
   return (
@@ -24,7 +31,12 @@ export function Topbar({ title, onOpenNav, activityLog }) {
       <h1 className="hidden text-[15px] font-semibold text-ink-1 lg:block">{title}</h1>
 
       <div className="ml-auto flex items-center gap-2">
-        <ActivityBell entries={activityLog} />
+        <ActivityBell
+          entries={activityLog}
+          unread={unreadActivity}
+          onRead={onActivityRead}
+          onViewMore={onViewActivity}
+        />
         <LanguageMenu />
         <ThemeToggle />
       </div>
