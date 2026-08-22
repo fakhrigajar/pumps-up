@@ -6,8 +6,7 @@ import { PaymentTag } from "../components/ui/PaymentTag";
 import { Select } from "../components/ui/Select";
 import { ChartCard, DataTable } from "../components/charts/ChartCard";
 import { HeatmapLegend, SalesHeatmap } from "../components/charts/SalesHeatmap";
-import { countOrders, selectHeatmap } from "../data/register";
-import { daySelection, isWithin, todayIso } from "../lib/dates";
+import { daySelection, todayIso } from "../lib/dates";
 import {
   formatDate,
   formatNumber,
@@ -15,22 +14,24 @@ import {
   formatSelection,
 } from "../lib/format";
 import { useTranslation } from "../i18n/context";
+import { reports as reportsApi } from "../api/reports";
+import { useAsync } from "../api/useAsync";
 
-export function Reports({ sales, sessions }) {
+export function Reports() {
   const { t, language } = useTranslation();
   const [selection, setSelection] = useState(() => daySelection(todayIso()));
   const [grouping, setGrouping] = useState("day");
   const [metric, setMetric] = useState("revenue");
 
-  const heatmap = useMemo(
-    () =>
-      selectHeatmap(sessions, {
-        start: selection.start,
-        end: selection.end,
-        groupBy: grouping,
-      }),
-    [sessions, selection, grouping],
+  const { data } = useAsync(
+    () => reportsApi.ledger(selection.start, selection.end, grouping),
+    [selection.start, selection.end, grouping],
   );
+
+  const heatmap = data?.heatmap ?? { hours: [], rows: [] };
+  const rows = data?.rows ?? [];
+  const totals = data?.totals ?? { sales: 0, profit: 0, units: 0 };
+  const orderCount = data?.orderCount ?? 0;
 
   const heatmapRows = useMemo(
     () =>
@@ -66,34 +67,6 @@ export function Reports({ sales, sessions }) {
 
   const showValue = (value) =>
     metric === "revenue" ? formatPrice(value) : formatNumber(value);
-
-  const rows = useMemo(
-    () =>
-      sales.filter((sale) =>
-        isWithin(sale.date, selection.start, selection.end),
-      ),
-    [sales, selection],
-  );
-
-  /** Customers rather than items: the rows already in `rows`, counted by the
-   * checkout each belonged to. Same list, same date range, same filters. */
-  const orderCount = useMemo(
-    () => countOrders(rows, selection.start, selection.end),
-    [rows, selection],
-  );
-
-  const totals = useMemo(
-    () =>
-      rows.reduce(
-        (sum, sale) => ({
-          sales: sum.sales + sale.soldFor * sale.qty,
-          profit: sum.profit + (sale.soldFor - sale.purchasePrice) * sale.qty,
-          units: sum.units + sale.qty,
-        }),
-        { sales: 0, profit: 0, units: 0 },
-      ),
-    [rows],
-  );
 
   function buildDoc() {
     const period = formatSelection(selection);

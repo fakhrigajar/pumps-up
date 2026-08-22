@@ -16,6 +16,8 @@ import {
 import { useSession } from "../auth/context";
 import { useStoreSettings } from "../settings/context";
 import { useTranslation } from "../i18n/context";
+import { orders as ordersApi } from "../api/orders";
+import { useAsync } from "../api/useAsync";
 
 const ALL_CASHIERS = "all";
 
@@ -26,9 +28,11 @@ const ALL_CASHIERS = "all";
  * which shifts exist as far as they are concerned rather than what a shift
  * looks like: an admin is handed every cashier's and a filter to pick between
  * them, a cashier is handed their own and no filter, and neither is a view of
- * the other's page with parts hidden.
+ * the other's page with parts hidden. The server already scopes a cashier's
+ * request to their own shifts, so `mine` below is a no-op for that role —
+ * kept anyway so this reads the same regardless of what the server did.
  */
-export function Register({ sessions, users }) {
+export function Register({ users }) {
   const { t } = useTranslation();
   const { user } = useSession();
   const { settings } = useStoreSettings();
@@ -37,12 +41,15 @@ export function Register({ sessions, users }) {
   const [cashier, setCashier] = useState(ALL_CASHIERS);
   const [openId, setOpenId] = useState(null);
 
+  const { data: sessions } = useAsync(() => ordersApi.sessions(), []);
+  const allSessions = sessions ?? [];
+
   const mine = useMemo(
     () =>
       admin
-        ? sessions
-        : sessions.filter((session) => session.cashier === user.login),
-    [sessions, admin, user.login],
+        ? allSessions
+        : allSessions.filter((session) => session.cashier === user.login),
+    [allSessions, admin, user.login],
   );
 
   const rows = useMemo(

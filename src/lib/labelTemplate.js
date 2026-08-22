@@ -13,9 +13,9 @@ import { LABEL_MAX_MM, LABEL_MIN_MM } from "./labels";
  * and is absolute (points): a 10 pt price is 10 pt on any stock, which is what
  * anyone setting a font size expects.
  *
- * Read from and written to local storage by LabelTemplateProvider, which is
- * why `normalizeTemplate` treats every field as untrusted: a design saved by
- * an older build, or edited by hand, must still print something sane.
+ * Fetched from and saved to the server by LabelTemplateProvider, which is why
+ * `normalizeTemplate` treats every field as untrusted: a design saved by an
+ * older build, or sent by hand, must still print something sane.
  */
 
 /** Bumped when the shape below changes in a way older saves cannot satisfy. */
@@ -277,24 +277,4 @@ export function withElement(template, id, changes) {
       [id]: { ...template.elements[id], ...changes },
     },
   });
-}
-
-const STORAGE_KEY = "pumpsup.labelTemplate";
-
-export function readTemplate() {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? normalizeTemplate(JSON.parse(stored)) : DEFAULT_TEMPLATE;
-  } catch {
-    return DEFAULT_TEMPLATE;
-  }
-}
-
-export function writeTemplate(template) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(template));
-  } catch {
-    // A design that cannot be stored is still the design in use for this
-    // session; a full or blocked store is not worth interrupting a print for.
-  }
 }

@@ -9,11 +9,11 @@ import {
   LOGIN_PATTERN,
   PASSWORD_MIN_LENGTH,
   ROLES,
-  createUser,
   findUser,
   normalizeLogin,
 } from "../../data/users";
 import { useTranslation } from "../../i18n/context";
+import { mapApiError } from "../../api/errors";
 
 function Field({ label, hint, children }) {
   return (
@@ -57,7 +57,7 @@ export function UserFormDialog({ users, onCancel, onSubmit }) {
     setError(null);
   };
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
     // The login is validated in the shape it will actually be stored in —
@@ -78,9 +78,11 @@ export function UserFormDialog({ users, onCancel, onSubmit }) {
       return setError(t("err.password", { min: PASSWORD_MIN_LENGTH }));
     }
 
-    return onSubmit(
-      createUser({ login, password: form.password, role: form.role }),
-    );
+    try {
+      return await onSubmit({ login, password: form.password, role: form.role });
+    } catch (err) {
+      return setError(mapApiError(err, t));
+    }
   }
 
   return (

@@ -25,10 +25,14 @@ export function Login({ onSignIn }) {
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
-    if (!onSignIn(login, password)) setError(true);
+    setSubmitting(true);
+    const signedIn = await onSignIn(login, password);
+    setSubmitting(false);
+    if (!signedIn) setError(true);
   }
 
   return (
@@ -107,7 +111,7 @@ export function Login({ onSignIn }) {
               type="submit"
               variant="primary"
               className="mt-4 h-10 w-full justify-center text-[14px]"
-              disabled={login.trim() === "" || password === ""}
+              disabled={login.trim() === "" || password === "" || submitting}
             >
               {t("login.submit")}
             </Button>

@@ -21,6 +21,7 @@ export function Sales({
   onRemove,
   onClear,
   onSell,
+  onSellError,
   barHeight,
   register,
   lastScan,
@@ -125,9 +126,13 @@ export function Sales({
           lines={saleLines}
           payment={payment}
           onCancel={() => setSelling(false)}
-          onConfirm={(sold) => {
-            onSell(sold);
-            setSelling(false);
+          onConfirm={async (sold) => {
+            try {
+              await onSell(sold);
+              setSelling(false);
+            } catch (error) {
+              onSellError?.(error);
+            }
           }}
         />
       ) : null}

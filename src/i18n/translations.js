@@ -506,8 +506,10 @@ export const en = {
   "login.submit": "Sign in",
   "login.signOut": "Sign out",
   "login.demo":
-    "Demo data, no server: sign in as dami / pumpsup123 for the back office, or aysel / kassa123 for the till.",
+    "Demo accounts: dami / pumpsup123 for the back office, or aysel / kassa123 for the till.",
   "err.signIn": "That login and password do not match an account.",
+  "err.generic": "Something went wrong. Try again.",
+  "common.loading": "Loading…",
 
   "reg.title": "Register sessions",
   "reg.subtitle": "One shift per row, newest first. Open a row for what it sold.",
@@ -1101,8 +1103,10 @@ export const ru = {
   "login.submit": "Войти",
   "login.signOut": "Выйти",
   "login.demo":
-    "Демо-данные, без сервера: dami / pumpsup123 — бэк-офис, aysel / kassa123 — касса.",
+    "Демо-аккаунты: dami / pumpsup123 — бэк-офис, aysel / kassa123 — касса.",
   "err.signIn": "Такой пары логина и пароля нет.",
+  "err.generic": "Что-то пошло не так. Попробуйте ещё раз.",
+  "common.loading": "Загрузка…",
 
   "reg.title": "Кассовые смены",
   "reg.subtitle": "Смена в строке, новые сверху. Откройте строку, чтобы увидеть продажи.",
@@ -1672,8 +1676,10 @@ export const az = {
   "login.submit": "Daxil ol",
   "login.signOut": "Çıxış",
   "login.demo":
-    "Nümunə məlumat, server yoxdur: arxa ofis üçün dami / pumpsup123, kassa üçün aysel / kassa123.",
+    "Nümunə hesablar: arxa ofis üçün dami / pumpsup123, kassa üçün aysel / kassa123.",
   "err.signIn": "Bu login və şifrə heç bir hesaba uyğun gəlmir.",
+  "err.generic": "Nəsə səhv getdi. Yenidən cəhd edin.",
+  "common.loading": "Yüklənir…",
 
   "reg.title": "Kassa növbələri",
   "reg.subtitle": "Hər sətir bir növbə, ən yenisi yuxarıda. Satışları görmək üçün sətri açın.",

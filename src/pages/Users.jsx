@@ -8,9 +8,12 @@ import { Button } from "../components/ui/Button";
 import { IconPlus, IconTrash } from "../components/Icons";
 import { isLastAdmin } from "../data/users";
 import { useTranslation } from "../i18n/context";
+import { useToast } from "../toast/context";
+import { mapApiError } from "../api/errors";
 
 export function Users({ users, onAdd, onDelete }) {
   const { t } = useTranslation();
+  const { notify } = useToast();
   const [selectedLogin, setSelectedLogin] = useState(null);
   const [dialog, setDialog] = useState(null);
 
@@ -58,8 +61,8 @@ export function Users({ users, onAdd, onDelete }) {
         <UserFormDialog
           users={users}
           onCancel={() => setDialog(null)}
-          onSubmit={(user) => {
-            onAdd(user);
+          onSubmit={async (user) => {
+            await onAdd(user);
             setSelectedLogin(user.login);
             setDialog(null);
           }}
@@ -70,10 +73,14 @@ export function Users({ users, onAdd, onDelete }) {
         <DeleteUserDialog
           user={selected}
           onCancel={() => setDialog(null)}
-          onConfirm={() => {
-            onDelete(selected.login);
-            setSelectedLogin(null);
-            setDialog(null);
+          onConfirm={async () => {
+            try {
+              await onDelete(selected.login);
+              setSelectedLogin(null);
+              setDialog(null);
+            } catch (error) {
+              notify(mapApiError(error, t), "error");
+            }
           }}
         />
       ) : null}

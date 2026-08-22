@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { FilterBar } from "../components/FilterBar";
 import { StatTile } from "../components/StatTile";
 import { ChartCard, DataTable } from "../components/charts/ChartCard";
@@ -13,19 +13,7 @@ import { RecentSales } from "../components/panels/RecentSales";
 import { OutOfStock } from "../components/panels/OutOfStock";
 import { ActivityLog } from "../components/panels/ActivityLog";
 import { SERIES } from "../components/charts/tokens";
-import { dateRanges, selectRealKpis, trailingWindow } from "../data/erp";
-import {
-  selectByHour,
-  selectByWeekday,
-  selectCashiers,
-  selectCategories,
-  selectDailySeries,
-  selectInventory,
-  selectMonthly,
-  selectMovers,
-  selectRegisterStatus,
-  selectToday,
-} from "../data/dashboard";
+import { dateRanges } from "../data/erp";
 import { isoParts, todayIso } from "../lib/dates";
 import {
   formatCurrency,
@@ -37,6 +25,8 @@ import {
   formatWeekdayShort,
 } from "../lib/format";
 import { useTranslation } from "../i18n/context";
+import { reports as reportsApi } from "../api/reports";
+import { useAsync } from "../api/useAsync";
 
 /**
  * The shop at a glance, in the order somebody actually asks about it: what
@@ -51,56 +41,41 @@ import { useTranslation } from "../i18n/context";
 
 const HOUR = (hour) => String(hour).padStart(2, "0");
 
-export function Dashboard({ products, sales, sessions, users, activityLog }) {
+export function Dashboard({ products, activityLog }) {
   const { t } = useTranslation();
   const [range, setRange] = useState("3m");
 
   const period = dateRanges.find((item) => item.id === range) ?? dateRanges[0];
   const monthsBack = period.monthsBack;
-  // Not `window` — shadowing the global inside a component is a trap for
-  // whoever adds a resize listener here later.
-  const span = useMemo(() => trailingWindow(monthsBack), [monthsBack]);
 
-  const day = useMemo(() => selectToday(sales), [sales]);
-  const registers = useMemo(
-    () => selectRegisterStatus(sessions, users),
-    [sessions, users],
-  );
+  // Every number below used to be a useMemo over the full in-memory ledger;
+  // now it is one request to the endpoint that runs the same math server-side
+  // over whatever MongoDB has, refetched whenever the period picker changes.
+  const { data, loading } = useAsync(() => reportsApi.dashboard(monthsBack), [monthsBack]);
 
-  const kpis = useMemo(
-    () => selectRealKpis(sales, monthsBack),
-    [sales, monthsBack],
-  );
+  if (loading || !data) {
+    return (
+      <div className="space-y-6">
+        <FilterBar range={range} onRangeChange={setRange} />
+        <p className="px-3 py-16 text-center text-[13px] text-ink-3">{t("common.loading")}</p>
+      </div>
+    );
+  }
 
-  const daily = useMemo(
-    () => selectDailySeries(sales, span.start, span.end),
-    [sales, span],
-  );
-  const monthly = useMemo(
-    () => selectMonthly(sales, span.start, span.end),
-    [sales, span],
-  );
-  const byHour = useMemo(
-    () => selectByHour(sessions, span.start, span.end),
-    [sessions, span],
-  );
-  const byWeekday = useMemo(
-    () => selectByWeekday(sales, span.start, span.end),
-    [sales, span],
-  );
-  const movers = useMemo(
-    () => selectMovers(sales, products, span.start, span.end),
-    [sales, products, span],
-  );
-  const categories = useMemo(
-    () => selectCategories(sales, products, span.start, span.end),
-    [sales, products, span],
-  );
-  const cashiers = useMemo(
-    () => selectCashiers(sales, span.start, span.end),
-    [sales, span],
-  );
-  const inventory = useMemo(() => selectInventory(products), [products]);
+  const {
+    today: day,
+    registers,
+    kpis,
+    daily,
+    monthly,
+    byHour,
+    byWeekday,
+    movers,
+    categories,
+    cashiers,
+    inventory,
+    recentSales,
+  } = data;
 
   // Percent change against yesterday, or nothing at all when yesterday took
   // nothing: a percentage of zero is not a large number, it is not a number.
@@ -471,7 +446,7 @@ export function Dashboard({ products, sales, sessions, users, activityLog }) {
       <Section title={t("dash.section.activity")}>
         <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-3">
           <div className="xl:col-span-2">
-            <RecentSales sales={sales} products={products} />
+            <RecentSales sales={recentSales} products={products} />
           </div>
           <ActivityLog entries={activityLog} />
         </div>

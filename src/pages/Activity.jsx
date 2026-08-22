@@ -8,6 +8,8 @@ import {
   formatPrice,
 } from "../lib/format";
 import { useTranslation } from "../i18n/context";
+import { activity as activityApi } from "../api/activity";
+import { useAsync } from "../api/useAsync";
 
 const ACTIONS = [
   { id: "added", messageKey: "log.added", tone: "var(--series-2)" },
@@ -39,9 +41,11 @@ const CHANGE_FIELDS = {
 };
 
 const MINUTE = 60_000;
-export function Activity({ entries }) {
+export function Activity() {
   const { t } = useTranslation();
   const [filter, setFilter] = useState("all");
+  const { data } = useAsync(() => activityApi.list(300), []);
+  const entries = data ?? [];
 
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {

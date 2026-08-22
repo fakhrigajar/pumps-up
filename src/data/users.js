@@ -1,4 +1,10 @@
-import { toIsoDate, todayIso } from "../lib/dates";
+/**
+ * The account list now lives in MongoDB, fetched through src/api/users.js.
+ * What is left here is validation shared with the server (so a bad login or
+ * a duplicate is caught instantly, client-side, before the round trip that
+ * enforces it for real) and the small lookup helpers the account pages run
+ * over whatever list they were handed as a prop.
+ */
 
 /**
  * Every role an account can hold, in the order the picker offers them.
@@ -40,53 +46,10 @@ export function countAdmins(users) {
 }
 
 /**
- * The last admin cannot be deleted: nobody would be left who can reach this
- * screen to create another one, and there is no backend to fix it from.
+ * The last admin cannot be deleted client-side either: nobody would be left
+ * who can reach this screen to create another one. The server enforces the
+ * same rule — this is the instant version of that check, not the real one.
  */
 export function isLastAdmin(users, user) {
   return user.role === "admin" && countAdmins(users) < 2;
 }
-
-/** One account record, with its login normalized and dated as of today. */
-export function createUser({ login, password, role }) {
-  return {
-    login: normalizeLogin(login),
-    password,
-    role,
-    createdAt: todayIso(),
-  };
-}
-
-function daysAgoIso(days) {
-  const now = new Date();
-  return toIsoDate(
-    new Date(now.getFullYear(), now.getMonth(), now.getDate() - days),
-  );
-}
-
-/**
- * Seed accounts, so the screen is never empty on first load and there is
- * always an admin to sign in as. The passwords are placeholders and sit in
- * plain memory exactly as the catalogue does — there is no backend to hash
- * them against, and nothing here survives a reload.
- */
-export const users = [
-  {
-    login: "dami",
-    password: "pumpsup123",
-    role: "admin",
-    createdAt: daysAgoIso(126),
-  },
-  {
-    login: "aysel",
-    password: "kassa123",
-    role: "cashier",
-    createdAt: daysAgoIso(54),
-  },
-  {
-    login: "rauf",
-    password: "kassa456",
-    role: "cashier",
-    createdAt: daysAgoIso(12),
-  },
-];

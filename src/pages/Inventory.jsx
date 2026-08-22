@@ -13,9 +13,12 @@ import { LabelSheet } from "../components/panels/LabelSheet";
 import { filterProducts } from "../data/erp";
 import { useLabelTemplate } from "../labels/context";
 import { useTranslation } from "../i18n/context";
+import { useToast } from "../toast/context";
+import { mapApiError } from "../api/errors";
 
 export function Inventory({ products, onAdd, onUpdate, onDelete, onReturn }) {
   const { t } = useTranslation();
+  const { notify } = useToast();
   // The design saved in Tools → label designer, which is what every label
   // printed from this page is drawn with. Nothing here has to be set up first:
   // until somebody designs one, this is the default template.
@@ -171,9 +174,9 @@ export function Inventory({ products, onAdd, onUpdate, onDelete, onReturn }) {
         <ProductFormDialog
           existingSkus={products.map((product) => product.sku)}
           onCancel={closeDialog}
-          onSubmit={(rows) => {
-            onAdd(rows);
-            setSelectedSku(rows[0]?.sku ?? null);
+          onSubmit={async (rows) => {
+            const created = await onAdd(rows);
+            setSelectedSku(created?.[0]?.sku ?? rows[0]?.sku ?? null);
             setQuery("");
             closeDialog();
           }}
@@ -186,9 +189,9 @@ export function Inventory({ products, onAdd, onUpdate, onDelete, onReturn }) {
           existingSkus={products.map((product) => product.sku)}
           onCancel={closeDialog}
           onRequestDelete={() => setDialog("confirmDelete")}
-          onSubmit={([changes]) => {
-            onUpdate(editing.sku, changes);
-            setSelectedSku(changes.sku);
+          onSubmit={async ([changes]) => {
+            const updated = await onUpdate(editing.sku, changes);
+            setSelectedSku(updated?.sku ?? changes.sku);
             closeDialog();
           }}
         />
@@ -198,10 +201,14 @@ export function Inventory({ products, onAdd, onUpdate, onDelete, onReturn }) {
         <DeleteProductDialog
           product={editing}
           onCancel={() => setDialog("edit")}
-          onConfirm={() => {
-            onDelete(editing.sku);
-            setSelectedSku(null);
-            closeDialog();
+          onConfirm={async () => {
+            try {
+              await onDelete(editing.sku);
+              setSelectedSku(null);
+              closeDialog();
+            } catch (error) {
+              notify(mapApiError(error, t), "error");
+            }
           }}
         />
       ) : null}
@@ -210,8 +217,8 @@ export function Inventory({ products, onAdd, onUpdate, onDelete, onReturn }) {
         <ReturnProductDialog
           product={selected}
           onCancel={closeDialog}
-          onConfirm={(units, reason) => {
-            onReturn(selected.sku, units, reason);
+          onConfirm={async (units, reason) => {
+            await onReturn(selected.sku, units, reason);
             closeDialog();
           }}
         />

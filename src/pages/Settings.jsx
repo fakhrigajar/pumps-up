@@ -23,6 +23,7 @@ import { formatPrice } from "../lib/format";
 import { useStoreSettings } from "../settings/context";
 import { useSession } from "../auth/context";
 import { useTranslation } from "../i18n/context";
+import { mapApiError } from "../api/errors";
 
 const PREVIEW_AMOUNT = 1234.5;
 
@@ -132,8 +133,9 @@ export function Settings({ users, onUpdateAccount }) {
         description={t("set.password.desc")}
       >
         <PasswordForm
-          user={user}
-          onSubmit={(password) => onUpdateAccount(user.login, { password })}
+          onSubmit={(password, currentPassword) =>
+            onUpdateAccount(user.login, { password, currentPassword })
+          }
         />
       </Section>
     </div>
@@ -194,7 +196,7 @@ function LoginForm({ users, user, onSubmit }) {
   const login = normalizeLogin(value);
   const unchanged = login === user.login;
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     setSaved(null);
 
@@ -211,7 +213,11 @@ function LoginForm({ users, user, onSubmit }) {
       return setError(t("err.loginDup", { login }));
     }
 
-    onSubmit(login);
+    try {
+      await onSubmit(login);
+    } catch (err) {
+      return setError(mapApiError(err, t));
+    }
     setValue(login);
     setError(null);
     return setSaved(t("set.login.saved", { login }));
@@ -251,7 +257,7 @@ function LoginForm({ users, user, onSubmit }) {
   );
 }
 
-function PasswordForm({ user, onSubmit }) {
+function PasswordForm({ onSubmit }) {
   const { t } = useTranslation();
   const blank = { current: "", next: "", confirm: "" };
   const [form, setForm] = useState(blank);
@@ -265,21 +271,28 @@ function PasswordForm({ user, onSubmit }) {
     setSaved(null);
   };
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     setSaved(null);
 
-    // The current password is asked for even though the account is already
-    // signed in: a screen left unlocked is the ordinary case in a shop, and
-    // it is the one thing standing between a passer-by and the back office.
-    if (form.current !== user.password) return setError(t("err.currentPass"));
+    // The current password can only be checked by the server now — this
+    // account's real password never reaches the client — so what stays here
+    // is the cheap, still-legitimate pre-checks that don't need it.
     if (form.next.length < PASSWORD_MIN_LENGTH) {
       return setError(t("err.password", { min: PASSWORD_MIN_LENGTH }));
     }
     if (form.next === form.current) return setError(t("err.samePass"));
     if (form.next !== form.confirm) return setError(t("err.confirmPass"));
 
-    onSubmit(form.next);
+    try {
+      // The current password is asked for even though the account is
+      // already signed in: a screen left unlocked is the ordinary case in a
+      // shop, and it is the one thing standing between a passer-by and the
+      // back office.
+      await onSubmit(form.next, form.current);
+    } catch (err) {
+      return setError(mapApiError(err, t));
+    }
     setForm(blank);
     setError(null);
     return setSaved(t("set.password.saved"));

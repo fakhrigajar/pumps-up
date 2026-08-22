@@ -6,11 +6,13 @@
  * are what a shift is judged against. They are kept apart from the theme and
  * the language for that reason: those are per-browser tastes, these are one
  * answer the whole shop shares.
+ *
+ * The settings themselves now live on the server (src/api/settings.js);
+ * everything below is the validation and defaults `StoreSettingsProvider`
+ * needs on both sides of that request.
  */
 
 export const SETTINGS_VERSION = 1;
-
-const STORAGE_KEY = "pumpsup.settings";
 
 /**
  * What the till can be set to. The code is the record; the name is only how
@@ -65,10 +67,10 @@ export function isKnownCurrency(code) {
 }
 
 /**
- * Anything read back from storage is treated as a suggestion: a settings blob
- * written by an older version, or edited by hand, must not be able to leave
- * the app with a currency `Intl` cannot format or a closing time that is not
- * a time at all.
+ * Anything the server sends back is treated as a suggestion the same way a
+ * localStorage blob used to be: a settings response this build doesn't fully
+ * recognize, or a malformed time, must not be able to leave the app with a
+ * currency `Intl` cannot format or a closing time that is not a time at all.
  */
 export function normalizeSettings(input) {
   const source = input && typeof input === "object" ? input : {};
@@ -87,21 +89,4 @@ export function normalizeSettings(input) {
     opensAt,
     closesAt,
   };
-}
-
-export function readSettings() {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? normalizeSettings(JSON.parse(stored)) : DEFAULT_SETTINGS;
-  } catch {
-    return DEFAULT_SETTINGS;
-  }
-}
-
-export function writeSettings(settings) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-  } catch {
-    // A shop that cannot be remembered is still set for this session.
-  }
 }

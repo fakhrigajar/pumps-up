@@ -1,21 +1,35 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { LabelTemplateContext } from "./context";
-import { normalizeTemplate, readTemplate, writeTemplate } from "../lib/labelTemplate";
+import { DEFAULT_TEMPLATE, normalizeTemplate } from "../lib/labelTemplate";
+import { settings as settingsApi } from "../api/settings";
 
 /**
  * Holds the saved label design for the whole app.
  *
- * It sits above the pages because the two ends of it are on different screens:
- * Tools draws the design, Inventory prints with it, and neither should have to
- * know about the other. Local storage is what makes "save" mean saved — the
- * design outlives the tab it was drawn in, so a shop sets its label up once.
+ * It sits above the pages because the two ends of it are on different
+ * screens: Tools draws the design, Inventory prints with it, and neither
+ * should have to know about the other. The design now lives on the server
+ * rather than in this browser's storage, so it is the same on every device
+ * signed in to this shop, not just the one it was drawn on.
  */
 export function LabelTemplateProvider({ children }) {
-  const [template, setTemplate] = useState(readTemplate);
+  const [template, setTemplate] = useState(DEFAULT_TEMPLATE);
 
-  const save = useCallback((next) => {
-    const clean = normalizeTemplate(next);
-    writeTemplate(clean);
+  useEffect(() => {
+    let cancelled = false;
+    settingsApi
+      .getLabelTemplate()
+      .then((data) => {
+        if (!cancelled) setTemplate(normalizeTemplate(data));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const save = useCallback(async (next) => {
+    const clean = await settingsApi.saveLabelTemplate(normalizeTemplate(next));
     setTemplate(clean);
     return clean;
   }, []);

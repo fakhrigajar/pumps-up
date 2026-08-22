@@ -1,5 +1,5 @@
 import { Card, CardHeader } from "../ui/Card";
-import { LOW_STOCK_THRESHOLD } from "../../data/dashboard";
+import { LOW_STOCK_THRESHOLD } from "../../data/erp";
 import { useTranslation } from "../../i18n/context";
 
 const LIMIT = 7;

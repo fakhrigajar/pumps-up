@@ -18,6 +18,7 @@ import {
   sizedSku,
 } from '../../data/erp'
 import { useTranslation } from '../../i18n/context'
+import { mapApiError } from '../../api/errors'
 
 function Field({ label, hint, children }) {
   return (
@@ -204,7 +205,7 @@ export function ProductFormDialog({
   )
   const idHintKey = editing ? 'dlg.idFixed' : showColors ? 'dlg.idAutoColors' : 'dlg.idAuto'
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
 
     const name = form.name.trim()
@@ -278,7 +279,11 @@ export function ProductFormDialog({
       }
 
       if (rows.length === 0) return setError(t('err.colorsEmpty'))
-      return onSubmit(rows)
+      try {
+        return await onSubmit(rows)
+      } catch (err) {
+        return setError(mapApiError(err, t))
+      }
     }
 
     // Editing keeps the record's own, already-assigned id untouched — the
@@ -302,18 +307,22 @@ export function ProductFormDialog({
     const stock = Number(form.stock)
     if (!Number.isInteger(stock) || stock < 0) return setError(t('err.stock'))
 
-    return onSubmit([
-      {
-        name,
-        sku: finalSku,
-        category,
-        color: category === 'Shoe' ? product?.color : undefined,
-        size: category === 'Shoe' ? product?.size : undefined,
-        stock,
-        purchasePrice,
-        sellingPrice,
-      },
-    ])
+    try {
+      return await onSubmit([
+        {
+          name,
+          sku: finalSku,
+          category,
+          color: category === 'Shoe' ? product?.color : undefined,
+          size: category === 'Shoe' ? product?.size : undefined,
+          stock,
+          purchasePrice,
+          sellingPrice,
+        },
+      ])
+    } catch (err) {
+      return setError(mapApiError(err, t))
+    }
   }
 
   return (
@@ -502,13 +511,17 @@ export function ReturnProductDialog({ product, onCancel, onConfirm }) {
   const [reason, setReason] = useState('')
   const [error, setError] = useState(null)
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
     const units = Number(quantity)
     if (!Number.isInteger(units) || units < 1) return setError(t('err.units'))
     const trimmedReason = reason.trim()
     if (!trimmedReason) return setError(t('err.reason'))
-    return onConfirm(units, trimmedReason)
+    try {
+      return await onConfirm(units, trimmedReason)
+    } catch (err) {
+      return setError(mapApiError(err, t))
+    }
   }
 
   const units = Number(quantity)
