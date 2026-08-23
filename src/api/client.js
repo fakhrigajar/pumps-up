@@ -2,10 +2,16 @@
  * The one place a fetch actually happens. Every request carries cookies
  * (`credentials: "include"`) so the httpOnly session cookie set by
  * /api/auth/login rides along automatically — nothing here ever touches a
- * token directly. In dev, Vite proxies `/api` to the Express server (see
- * vite.config.js) so this is always same-origin; in production Express
- * serves the built app itself, so it is same-origin there too.
+ * token directly.
+ *
+ * The API is a separate deployment from this frontend (its own Railway
+ * service), so this is a cross-origin request in every real environment —
+ * `VITE_API_URL` is the absolute base to send it to. Only bare local dev,
+ * with no `VITE_API_URL` set and a server running on the same machine, falls
+ * back to a same-origin relative path.
  */
+const API_BASE = import.meta.env.VITE_API_URL?.replace(/\/$/, "") ?? "";
+
 export class ApiError extends Error {
   constructor(status, code, message) {
     super(message || code);
@@ -16,7 +22,7 @@ export class ApiError extends Error {
 }
 
 async function request(path, { method = "GET", body } = {}) {
-  const response = await fetch(`/api${path}`, {
+  const response = await fetch(`${API_BASE}/api${path}`, {
     method,
     credentials: "include",
     headers: body !== undefined ? { "Content-Type": "application/json" } : undefined,

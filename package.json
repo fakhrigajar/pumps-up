@@ -4,11 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -k -n web,api -c blue,green \"npm:dev:web\" \"npm:dev:server\"",
-    "dev:web": "vite",
-    "dev:server": "npm run dev --prefix server",
-    "seed": "npm run seed --prefix server",
+    "dev": "vite",
     "build": "vite build",
+    "start": "serve -s dist -l ${PORT:-4173}",
     "lint": "oxlint",
     "preview": "vite preview"
   },
@@ -21,9 +19,9 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.4",
     "autoprefixer": "^10.5.4",
-    "concurrently": "^8.2.2",
     "oxlint": "^1.75.0",
     "postcss": "^8.5.26",
+    "serve": "^14.2.4",
     "tailwindcss": "^3.4.17",
     "vite": "^8.2.0"
   }
