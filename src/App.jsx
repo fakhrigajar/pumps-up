@@ -254,6 +254,10 @@ export default function App() {
 
   useBarcodeScanner(onScan, { enabled: Boolean(signedIn) });
 
+  // A tab resuming a session has a moment where it does not yet know who is
+  // signed in; showing the sign-in screen through it would ask a signed-in
+  // cashier to sign in again for a frame. A tab that never signed in skips
+  // this entirely — `authChecked` starts true there.
   if (!session.authChecked) {
     return <LoadingScreen />;
   }
