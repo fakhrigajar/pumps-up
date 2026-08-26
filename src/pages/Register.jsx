@@ -4,6 +4,7 @@ import { Select } from "../components/ui/Select";
 import {
   closingStatus,
   openingStatus,
+  sessionKey,
   sessionProducts,
   sessionTotals,
 } from "../data/register";
@@ -140,7 +141,8 @@ export function Register({ users }) {
             <tbody>
               {rows.map((session, index) => {
                 const totalsOf = sessionTotals(session);
-                const expanded = session.id === openId;
+                const key = sessionKey(session);
+                const expanded = key === openId;
                 const border =
                   index === rows.length - 1 && !expanded
                     ? ""
@@ -148,14 +150,14 @@ export function Register({ users }) {
 
                 return (
                   <SessionRows
-                    key={session.id}
+                    key={key}
                     session={session}
                     totals={totalsOf}
                     admin={admin}
                     hours={settings}
                     border={border}
                     expanded={expanded}
-                    onToggle={() => setOpenId(expanded ? null : session.id)}
+                    onToggle={() => setOpenId(expanded ? null : key)}
                   />
                 );
               })}

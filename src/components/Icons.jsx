@@ -5,7 +5,7 @@ function Icon({ children, className = 'h-5 w-5', ...rest }) {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.5"
+      strokeWidth="1.9"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
@@ -19,10 +19,10 @@ function Icon({ children, className = 'h-5 w-5', ...rest }) {
 
 export const IconDashboard = (p) => (
   <Icon {...p}>
-    <rect x="3" y="3" width="7.5" height="8.5" rx="1.5" />
-    <rect x="13.5" y="3" width="7.5" height="5" rx="1.5" />
-    <rect x="13.5" y="11" width="7.5" height="10" rx="1.5" />
-    <rect x="3" y="14.5" width="7.5" height="6.5" rx="1.5" />
+    <rect x="3" y="3" width="7.5" height="8.5" rx="2.2" />
+    <rect x="13.5" y="3" width="7.5" height="5" rx="2" />
+    <rect x="13.5" y="11" width="7.5" height="10" rx="2.2" />
+    <rect x="3" y="14.5" width="7.5" height="6.5" rx="2.2" />
   </Icon>
 )
 
@@ -142,7 +142,7 @@ export const IconChevronRight = (p) => (
 
 export const IconCalendar = (p) => (
   <Icon {...p}>
-    <rect x="3.25" y="5" width="17.5" height="16" rx="2.5" />
+    <rect x="3.25" y="5" width="17.5" height="16" rx="3.6" />
     <path d="M3.25 9.75h17.5M8 3v4M16 3v4" />
   </Icon>
 )
@@ -211,7 +211,7 @@ export const IconPrint = (p) => (
   <Icon {...p}>
     <path d="M7 8.5V3.5h10v5" />
     <path d="M7 17H5a2 2 0 0 1-2-2v-4.5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2V15a2 2 0 0 1-2 2h-2" />
-    <rect x="7" y="13.5" width="10" height="7" rx="1" />
+    <rect x="7" y="13.5" width="10" height="7" rx="1.8" />
   </Icon>
 )
 
@@ -307,7 +307,7 @@ export const IconAlignBottom = (p) => (
 
 export const IconRegister = (p) => (
   <Icon {...p}>
-    <rect x="2.5" y="9" width="19" height="11.5" rx="2" />
+    <rect x="2.5" y="9" width="19" height="11.5" rx="3" />
     <path d="M6.5 9V6a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v3" />
     <path d="M9.5 13.5h5M12 13.5v3.5" />
   </Icon>
@@ -336,7 +336,7 @@ export const IconSignOut = (p) => (
 
 export const IconTable = (p) => (
   <Icon {...p}>
-    <rect x="3" y="4.5" width="18" height="15" rx="2" />
+    <rect x="3" y="4.5" width="18" height="15" rx="3.2" />
     <path d="M3 9.5h18M9.5 9.5v10" />
   </Icon>
 )
@@ -350,7 +350,7 @@ export const IconChart = (p) => (
 
 export const IconCash = (p) => (
   <Icon {...p}>
-    <rect x="2.5" y="6.5" width="19" height="11" rx="2" />
+    <rect x="2.5" y="6.5" width="19" height="11" rx="3" />
     <circle cx="12" cy="12" r="2.5" />
     <path d="M6 12h.01M18 12h.01" />
   </Icon>
@@ -358,7 +358,7 @@ export const IconCash = (p) => (
 
 export const IconCard = (p) => (
   <Icon {...p}>
-    <rect x="2.5" y="5.5" width="19" height="13" rx="2.2" />
+    <rect x="2.5" y="5.5" width="19" height="13" rx="3.2" />
     <path d="M2.5 10h19" />
     <path d="M6 14.5h4" />
   </Icon>

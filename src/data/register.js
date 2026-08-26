@@ -98,3 +98,27 @@ export function closingStatus(closedAt, closesAt) {
   }
   return { key: "reg.onTime", tone: "good", drift };
 }
+
+/**
+ * The one value a session is addressed by in the UI: its React key, and the
+ * "which shift is open" state on the register page.
+ *
+ * Sessions used to be seeded here with an `id` of their own; they come from
+ * MongoDB now, whose documents carry `_id` instead, so neither field can be
+ * relied on to be there. That mattered rather than being a tidiness point:
+ * with `session.id` undefined on every row, `session.id === openId` compared
+ * undefined against undefined and every shift on the page read as the opened
+ * one, so opening one cashier's products opened all of them.
+ *
+ * The fallback is the shift itself. A cashier can open a till twice in a day
+ * — closing ends a shift rather than pausing it — so the opening time is what
+ * separates the two, and the three together are unique without needing a key
+ * from the server at all.
+ */
+export function sessionKey(session) {
+  return (
+    session.id ??
+    session._id ??
+    `${session.cashier}-${session.date}-${session.openedAt}`
+  );
+}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Select } from "../components/ui/Select";
@@ -31,105 +31,240 @@ const PREVIEW_AMOUNT = 1234.5;
 const inputClass =
   "mt-1 h-9 w-full rounded-lg border border-line bg-surface-2 px-3 text-[13px] text-ink-1 placeholder:text-ink-3 focus:bg-surface-1";
 
+/** What the form shows when nothing has been typed into it: the shop as it is
+ *  stored, and the name the session is under. */
+function baselineOf(settings, login) {
+  return {
+    currency: settings.currency,
+    opensAt: settings.opensAt,
+    closesAt: settings.closesAt,
+    login,
+  };
+}
+
+/** Everything about a login that can be judged without asking the server. */
+function loginProblem(login, users, current, t) {
+  if (!login) return t("err.login");
+  if (login.length < LOGIN_MIN_LENGTH || login.length > LOGIN_MAX_LENGTH) {
+    return t("err.loginLength", {
+      min: LOGIN_MIN_LENGTH,
+      max: LOGIN_MAX_LENGTH,
+    });
+  }
+  if (!LOGIN_PATTERN.test(login)) return t("err.loginChars");
+  // The account being renamed is not a clash with itself, and every other
+  // login in the list is.
+  if (login !== current && findUser(users, login)) {
+    return t("err.loginDup", { login });
+  }
+  return null;
+}
+
 export function Settings({ users, onUpdateAccount }) {
   const { t } = useTranslation();
   const { settings, update } = useStoreSettings();
   const { user } = useSession();
 
+  const [draft, setDraft] = useState(() => baselineOf(settings, user.login));
+  const [error, setError] = useState(null);
+  const [saved, setSaved] = useState(null);
+  const [saving, runSave] = usePending();
+
+  // The stored values are the draft's baseline, and they move twice: when the
+  // server's answer replaces the defaults the provider starts from, and after
+  // each save. Re-seeding on both is what keeps the form showing what the shop
+  // is actually set to rather than what it happened to be set to on arrival.
+  useEffect(() => {
+    setDraft(baselineOf(settings, user.login));
+  }, [settings, user.login]);
+
+  const set = (key) => (value) => {
+    setDraft((current) => ({ ...current, [key]: value }));
+    setError(null);
+    setSaved(null);
+  };
+
+  const login = normalizeLogin(draft.login);
+  const changed = {
+    currency: draft.currency !== settings.currency,
+    opensAt: draft.opensAt !== settings.opensAt,
+    closesAt: draft.closesAt !== settings.closesAt,
+    login: login !== user.login,
+  };
+  const storeChanged = changed.currency || changed.opensAt || changed.closesAt;
+  const dirty = storeChanged || changed.login;
+
+  // Judged on the draft rather than on what is stored, so the warning appears
+  // while the typo is still on screen to be fixed.
   const backwards =
-    clockToMinutes(settings.closesAt) <= clockToMinutes(settings.opensAt);
+    clockToMinutes(draft.closesAt) <= clockToMinutes(draft.opensAt);
+
+  async function handleSave(event) {
+    event.preventDefault();
+    setSaved(null);
+
+    // Whatever the client can rule out is ruled out before any request goes,
+    // so a rejected login never leaves the hours saved and the name not.
+    if (changed.login) {
+      const problem = loginProblem(login, users, user.login, t);
+      if (problem) return setError(problem);
+    }
+
+    // Only what moved is sent. The shop's settings and the account behind two
+    // different endpoints is a fact about the API; one button over both is a
+    // fact about this screen, and this is where the two are reconciled.
+    const store = {};
+    if (changed.currency) store.currency = draft.currency;
+    if (changed.opensAt) store.opensAt = draft.opensAt;
+    if (changed.closesAt) store.closesAt = draft.closesAt;
+
+    try {
+      await runSave(async () => {
+        if (storeChanged) await update(store);
+        if (changed.login) await onUpdateAccount(user.login, { login });
+      });
+    } catch (err) {
+      return setError(mapApiError(err, t));
+    }
+
+    setError(null);
+    // A rename is worth saying out loud rather than confirming generically:
+    // it is also the name the reader signs in under next time.
+    return setSaved(
+      changed.login ? t("set.login.saved", { login }) : t("set.saved"),
+    );
+  }
 
   return (
     <div className="mx-auto w-full space-y-4">
       <p className="text-[13px] text-ink-2">{t("set.desc")}</p>
 
-      <Section
-        Icon={IconCash}
-        title={t("set.currency")}
-        description={t("set.currency.desc")}
-      >
-        <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
+      {/* Everything the shop is set to, saved by the one button at the end of
+          it. Changing the password is deliberately not part of that: it needs
+          the current password, it succeeds and fails on its own terms, and it
+          clears itself afterwards — so it stays a form of its own, below the
+          rule, with its own button. */}
+      <form onSubmit={handleSave} noValidate className="space-y-4">
+        <Section
+          Icon={IconCash}
+          title={t("set.currency")}
+          description={t("set.currency.desc")}
+        >
+          <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
+            <label className="block w-full max-w-[260px]">
+              <span className="text-[12.5px] font-medium text-ink-2">
+                {t("set.currency.label")}
+              </span>
+              <div className="mt-1">
+                <Select
+                  label={t("set.currency.label")}
+                  value={draft.currency}
+                  onChange={set("currency")}
+                  options={CURRENCIES.map(({ code, nameKey }) => ({
+                    value: code,
+                    label: `${code} · ${t(nameKey)}`,
+                  }))}
+                />
+              </div>
+            </label>
+
+            {/* The preview follows the stored currency, not the draft: it is
+                showing how prices read across the app, and they do not change
+                until this is saved. */}
+            <p className="pb-2 text-[12.5px] text-ink-3">
+              {t("set.currency.preview")}{" "}
+              <span className="font-medium tabular-nums text-ink-1">
+                {formatPrice(PREVIEW_AMOUNT)}
+              </span>
+            </p>
+          </div>
+        </Section>
+
+        <Section
+          Icon={IconClock}
+          title={t("set.hours")}
+          description={t("set.hours.desc")}
+        >
+          <div className="flex flex-wrap gap-3">
+            <TimeField
+              label={t("set.opensAt")}
+              value={draft.opensAt}
+              onChange={set("opensAt")}
+            />
+            <TimeField
+              label={t("set.closesAt")}
+              value={draft.closesAt}
+              onChange={set("closesAt")}
+            />
+          </div>
+
+          {/* Not an error — a shop that shuts before it opens is a typo, but it
+              is the reader's typo to fix, and refusing to store it would lose
+              whichever of the two they meant to type next. */}
+          {backwards ? (
+            <p
+              role="status"
+              className="mt-3 text-[12.5px]"
+              style={{ color: "var(--status-warning)" }}
+            >
+              {t("set.hours.backwards")}
+            </p>
+          ) : null}
+        </Section>
+
+        <Section
+          Icon={IconUsers}
+          title={t("set.login")}
+          description={t("set.login.desc")}
+        >
           <label className="block w-full max-w-[260px]">
             <span className="text-[12.5px] font-medium text-ink-2">
-              {t("set.currency.label")}
+              {t("set.login.label")}
             </span>
-            <div className="mt-1">
-              <Select
-                label={t("set.currency.label")}
-                value={settings.currency}
-                onChange={(currency) => update({ currency })}
-                options={CURRENCIES.map(({ code, nameKey }) => ({
-                  value: code,
-                  label: `${code} · ${t(nameKey)}`,
-                }))}
-              />
-            </div>
+            <input
+              type="text"
+              value={draft.login}
+              onChange={(event) => set("login")(event.target.value)}
+              autoComplete="username"
+              autoCapitalize="none"
+              spellCheck="false"
+              maxLength={LOGIN_MAX_LENGTH}
+              className={inputClass}
+            />
           </label>
+          <p className="mt-2 text-[11.5px] text-ink-3">{t("udlg.loginHint")}</p>
+        </Section>
 
-          <p className="pb-2 text-[12.5px] text-ink-3">
-            {t("set.currency.preview")}{" "}
-            <span className="font-medium tabular-nums text-ink-1">
-              {formatPrice(PREVIEW_AMOUNT)}
-            </span>
-          </p>
-        </div>
-      </Section>
-
-      <Section
-        Icon={IconClock}
-        title={t("set.hours")}
-        description={t("set.hours.desc")}
-      >
-        <div className="flex flex-wrap gap-3">
-          <TimeField
-            label={t("set.opensAt")}
-            value={settings.opensAt}
-            onChange={(opensAt) => update({ opensAt })}
-          />
-          <TimeField
-            label={t("set.closesAt")}
-            value={settings.closesAt}
-            onChange={(closesAt) => update({ closesAt })}
-          />
-        </div>
-
-        {/* Not an error — a shop that shuts before it opens is a typo, but it
-            is the reader's typo to fix, and refusing to store it would lose
-            whichever of the two they meant to type next. */}
-        {backwards ? (
-          <p
-            role="status"
-            className="mt-3 text-[12.5px]"
-            style={{ color: "var(--status-warning)" }}
+        {/* The one button the whole form answers to. It sits at the end and on
+            the right, where the last thing read on a page of fields is the
+            thing that commits them, and it has nothing to do until something
+            has actually moved. */}
+        <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
+          <Status error={error} saved={saved} className="" />
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={!dirty}
+            pending={saving}
           >
-            {t("set.hours.backwards")}
-          </p>
-        ) : null}
-      </Section>
+            {saving ? t("dlg.saving") : t("set.save")}
+          </Button>
+        </div>
+      </form>
 
-      <Section
-        Icon={IconUsers}
-        title={t("set.login")}
-        description={t("set.login.desc")}
-      >
-        <LoginForm
-          users={users}
-          user={user}
-          onSubmit={(login) => onUpdateAccount(user.login, { login })}
-        />
-      </Section>
-
-      <Section
-        Icon={IconKey}
-        title={t("set.password")}
-        description={t("set.password.desc")}
-      >
-        <PasswordForm
-          onSubmit={(password, currentPassword) =>
-            onUpdateAccount(user.login, { password, currentPassword })
-          }
-        />
-      </Section>
+      <div className="border-t border-line pt-4">
+        <Section
+          Icon={IconKey}
+          title={t("set.password")}
+          description={t("set.password.desc")}
+        >
+          <PasswordForm
+            onSubmit={(password, currentPassword) =>
+              onUpdateAccount(user.login, { password, currentPassword })
+            }
+          />
+        </Section>
+      </div>
     </div>
   );
 }
@@ -176,82 +311,6 @@ function TimeField({ label, value, onChange }) {
         className={`${inputClass} w-[132px] tabular-nums`}
       />
     </label>
-  );
-}
-
-function LoginForm({ users, user, onSubmit }) {
-  const { t } = useTranslation();
-  const [value, setValue] = useState(user.login);
-  const [error, setError] = useState(null);
-  const [saved, setSaved] = useState(null);
-  const [saving, runSave] = usePending();
-
-  const login = normalizeLogin(value);
-  const unchanged = login === user.login;
-
-  async function handleSubmit(event) {
-    event.preventDefault();
-    setSaved(null);
-
-    if (!login) return setError(t("err.login"));
-    if (login.length < LOGIN_MIN_LENGTH || login.length > LOGIN_MAX_LENGTH) {
-      return setError(
-        t("err.loginLength", { min: LOGIN_MIN_LENGTH, max: LOGIN_MAX_LENGTH }),
-      );
-    }
-    if (!LOGIN_PATTERN.test(login)) return setError(t("err.loginChars"));
-    // The account being renamed is not a clash with itself, and every other
-    // login in the list is.
-    if (login !== user.login && findUser(users, login)) {
-      return setError(t("err.loginDup", { login }));
-    }
-
-    try {
-      await runSave(() => onSubmit(login));
-    } catch (err) {
-      return setError(mapApiError(err, t));
-    }
-    setValue(login);
-    setError(null);
-    return setSaved(t("set.login.saved", { login }));
-  }
-
-  return (
-    <form onSubmit={handleSubmit} noValidate>
-      <div className="flex flex-wrap items-end gap-3">
-        <label className="block w-full max-w-[260px]">
-          <span className="text-[12.5px] font-medium text-ink-2">
-            {t("set.login.label")}
-          </span>
-          <input
-            type="text"
-            value={value}
-            onChange={(event) => {
-              setValue(event.target.value);
-              setError(null);
-              setSaved(null);
-            }}
-            autoComplete="username"
-            autoCapitalize="none"
-            spellCheck="false"
-            maxLength={LOGIN_MAX_LENGTH}
-            className={inputClass}
-          />
-        </label>
-
-        <Button
-          type="submit"
-          variant="primary"
-          disabled={unchanged}
-          pending={saving}
-        >
-          {saving ? t("dlg.saving") : t("set.save")}
-        </Button>
-      </div>
-
-      <Status error={error} saved={saved} />
-      <p className="mt-2 text-[11.5px] text-ink-3">{t("udlg.loginHint")}</p>
-    </form>
   );
 }
 
@@ -379,13 +438,18 @@ function PasswordForm({ onSubmit }) {
   );
 }
 
-/** What the form has to say back, in the one place a reader looks for it. */
-function Status({ error, saved }) {
+/**
+ * What a form has to say back, in the one place a reader looks for it. The
+ * margin is a prop because it is read in two positions: stacked under the
+ * password fields, and inline beside the save button, where a top margin
+ * would knock it out of line with the button it sits next to.
+ */
+function Status({ error, saved, className = "mt-2.5" }) {
   if (!error && !saved) return null;
   return (
     <p
       role={error ? "alert" : "status"}
-      className="mt-2.5 text-[12.5px]"
+      className={`text-[12.5px] ${className}`}
       style={{ color: `var(--status-${error ? "critical" : "good"})` }}
     >
       {error ?? saved}

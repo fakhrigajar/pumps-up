@@ -53,6 +53,25 @@ export function Inventory({ products, onAdd, onUpdate, onDelete }) {
     checkedSkus.has(product.sku),
   ).length;
 
+  // How many are ticked is what the toolbar is built from, so it is named
+  // once here rather than recounted at each of the three buttons.
+  const checkedCount = checkedProducts.length;
+
+  // The ticked set is keyed by sku, so it has to keep up when an edit changes
+  // one underneath it: without this, renaming a ticked product's sku drops it
+  // from the print run silently — the row still shows ticked while the count
+  // on the button goes down by one. Passing no `to` drops the tick instead,
+  // which is what a deletion wants.
+  const retagChecked = useCallback((from, to) => {
+    setCheckedSkus((current) => {
+      if (!current.has(from)) return current;
+      const next = new Set(current);
+      next.delete(from);
+      if (to) next.add(to);
+      return next;
+    });
+  }, []);
+
   const toggleChecked = useCallback((product) => {
     setCheckedSkus((current) => {
       const next = new Set(current);
@@ -132,31 +151,36 @@ export function Inventory({ products, onAdd, onUpdate, onDelete }) {
           someChecked: checkedInView > 0,
         }}
         actions={
+          /* Each button is offered only where it can act, so none of them
+             needs a disabled state or a tooltip explaining why it is greyed
+             out. The two selections gate different buttons because they
+             answer different questions: the clicked row is *which* product,
+             which is what editing one needs, and the ticks are *how many*,
+             which is what printing a run of labels needs. */
           <>
-            <Button variant="primary" onClick={() => setDialog("add")}>
-              <IconPlus className="h-4 w-4" />
-              {t("inv.add")}
-            </Button>
-            <Button
-              onClick={openEditor}
-              disabled={!hasSelection}
-              title={hasSelection ? undefined : t("inv.selectFirst")}
-            >
-              <IconEdit className="h-4 w-4" />
-              {t("inv.edit")}
-            </Button>
-            <Button
-              onClick={() => setDialog("print")}
-              disabled={checkedProducts.length === 0}
-              title={
-                checkedProducts.length === 0 ? t("inv.checkFirst") : undefined
-              }
-            >
-              <IconPrint className="h-4 w-4" />
-              {checkedProducts.length === 0
-                ? t("inv.print")
-                : t("inv.printCount", { count: checkedProducts.length })}
-            </Button>
+            {/* With nothing ticked the page is a catalogue and the thing to
+                do to it is add to it. Tick something and it is a selection
+                instead, so Add stands down in favour of what acts on it. */}
+            {checkedCount === 0 ? (
+              <Button variant="primary" onClick={() => setDialog("add")}>
+                <IconPlus className="h-4 w-4" />
+                {t("inv.add")}
+              </Button>
+            ) : null}
+
+            {hasSelection ? (
+              <Button onClick={openEditor}>
+                <IconEdit className="h-4 w-4" />
+                {t("inv.edit")}
+              </Button>
+            ) : null}
+
+            {checkedCount > 0 ? (
+              <Button variant="primary" onClick={() => setDialog("print")}>
+                <IconPrint className="h-4 w-4" />
+                {t("inv.printCount", { count: checkedCount })}
+              </Button>
+            ) : null}
           </>
         }
       />
@@ -182,7 +206,9 @@ export function Inventory({ products, onAdd, onUpdate, onDelete }) {
           onRequestDelete={() => setDialog("confirmDelete")}
           onSubmit={async ([changes]) => {
             const updated = await onUpdate(editing.sku, changes);
-            setSelectedSku(updated?.sku ?? changes.sku);
+            const sku = updated?.sku ?? changes.sku;
+            setSelectedSku(sku);
+            retagChecked(editing.sku, sku);
             closeDialog();
           }}
         />
@@ -196,6 +222,7 @@ export function Inventory({ products, onAdd, onUpdate, onDelete }) {
             try {
               await onDelete(editing.sku);
               setSelectedSku(null);
+              retagChecked(editing.sku);
               closeDialog();
             } catch (error) {
               notify(mapApiError(error, t), "error");

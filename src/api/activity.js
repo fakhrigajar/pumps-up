@@ -12,4 +12,9 @@ export const activity = {
     api
       .get(`/activity${limit ? `?limit=${limit}` : ""}`)
       .then((data) => normalizeEntries(data.entries)),
+  // Answers with the moment the server recorded, which is the one the feed's
+  // own timestamps are measured against — so the caller stores what came back
+  // rather than the time it happened to ask.
+  markRead: () =>
+    api.post("/activity/read").then((data) => new Date(data.readThrough).getTime()),
 };

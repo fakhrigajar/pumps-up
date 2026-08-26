@@ -5,7 +5,6 @@ import { ChartCard, DataTable } from "../components/charts/ChartCard";
 import { TrendLines } from "../components/charts/TrendLines";
 import { Columns } from "../components/charts/Columns";
 import { RankedBars } from "../components/charts/RankedBars";
-import { RegisterStatus } from "../components/panels/RegisterStatus";
 import { TopCashiers } from "../components/panels/TopCashiers";
 import { LowStock } from "../components/panels/LowStock";
 import { SlowMovers } from "../components/panels/SlowMovers";
@@ -14,7 +13,7 @@ import { OutOfStock } from "../components/panels/OutOfStock";
 import { ActivityLog } from "../components/panels/ActivityLog";
 import { SERIES } from "../components/charts/tokens";
 import { dateRanges } from "../data/erp";
-import { isoParts, todayIso } from "../lib/dates";
+import { isoParts } from "../lib/dates";
 import {
   formatCurrency,
   formatCurrencyCompact,
@@ -29,14 +28,14 @@ import { reports as reportsApi } from "../api/reports";
 import { useAsync } from "../api/useAsync";
 
 /**
- * The shop at a glance, in the order somebody actually asks about it: what
- * happened today, how the period is going, what is selling, what is on the
- * shelves, and what has just been touched.
+ * The shop at a glance, in the order somebody actually asks about it: how the
+ * period is going, what is selling, what is on the shelves, and what has just
+ * been touched.
  *
  * The sections are what make that an argument rather than a wall of cards —
  * a heading says which question the next few panels answer, and only the
- * middle three follow the period filter. Today is today whatever the filter
- * says, and the stock figures are a count of the shelves right now.
+ * first two follow the period filter. The stock figures are a count of the
+ * shelves right now.
  */
 
 const HOUR = (hour) => String(hour).padStart(2, "0");
@@ -63,8 +62,6 @@ export function Dashboard({ products, activityLog }) {
   }
 
   const {
-    today: day,
-    registers,
     kpis,
     daily,
     monthly,
@@ -76,20 +73,6 @@ export function Dashboard({ products, activityLog }) {
     inventory,
     recentSales,
   } = data;
-
-  // Percent change against yesterday, or nothing at all when yesterday took
-  // nothing: a percentage of zero is not a large number, it is not a number.
-  const traded = day.yesterday.orders > 0;
-  const change = (now, before) => (traded && before ? ((now - before) / before) * 100 : undefined);
-  const dayNote = t(traded ? "dash.vsYesterday" : "dash.noYesterday");
-
-  const todayTiles = [
-    { id: "revenue", labelKey: "dash.todayRevenue", format: "price", now: day.today.revenue, before: day.yesterday.revenue },
-    { id: "profit", labelKey: "dash.todayProfit", format: "price", now: day.today.profit, before: day.yesterday.profit },
-    { id: "orders", labelKey: "dash.todayOrders", format: "number", now: day.today.orders, before: day.yesterday.orders },
-    { id: "units", labelKey: "dash.todayItems", format: "number", now: day.today.units, before: day.yesterday.units },
-    { id: "aov", labelKey: "dash.todayAov", format: "price", now: day.today.aov, before: day.yesterday.aov },
-  ];
 
   const money = (value) => (value === 0 ? "0" : formatCurrencyCompact(value));
 
@@ -136,24 +119,6 @@ export function Dashboard({ products, activityLog }) {
   return (
     <div className="space-y-6">
       <FilterBar range={range} onRangeChange={setRange} />
-
-      <Section title={t("dash.section.today")} hint={formatDate(todayIso())}>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-          {todayTiles.map((tile) => (
-            <StatTile
-              key={tile.id}
-              label={t(tile.labelKey)}
-              value={tile.now}
-              format={tile.format}
-              delta={change(tile.now, tile.before)}
-              upIsGood
-              note={dayNote}
-            />
-          ))}
-        </div>
-
-        <RegisterStatus status={registers} />
-      </Section>
 
       <Section title={t("dash.section.performance")} hint={t(period.labelKey)}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">

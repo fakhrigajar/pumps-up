@@ -100,11 +100,11 @@ gutter clips the longer one.
 log, all lifted in [App.jsx](src/App.jsx) — never generated data. Its
 selectors live in [src/data/dashboard.js](src/data/dashboard.js).
 
-It is built in five bands, each with a heading saying which question the next
+It is built in four bands, each with a heading saying which question the next
 few panels answer, because two dozen cards in a row is a wall rather than an
-argument. Only the middle bands follow the **Period** filter (last 3/6/12
-months): today is today whatever the filter says, and the stock figures are a
-count of the shelves right now.
+argument. Only the first two bands follow the **Period** filter (last 3/6/12
+months): the stock figures are a count of the shelves right now, and the
+activity log is the last thing touched whenever it was touched.
 
 Almost every figure comes off the sales ledger, which carries the price a row
 sold at, the cost it was bought at, the checkout it belonged to and who rang
@@ -112,17 +112,6 @@ it up. That is deliberate — one list answering every question is one list to
 keep honest, and two panels on the same screen cannot quietly disagree about a
 day. The one exception is the hour of day: the ledger is dated to the day, and
 the clock lives on the shift.
-
-### Today
-
-- **Revenue, Profit, Orders, Items sold, Average order** — each against
-  yesterday, because a day on its own is a number without a size. When
-  yesterday sold nothing the tile says so instead of showing a percentage: a
-  change from zero is not a large number, it is not a number.
-- **Registers** — a card per cashier, open or closed, with the shift's takings
-  so far. A closed till is a card that says so rather than a card that is
-  missing: "three cashiers, one open" is the state of the shop floor, and it
-  cannot be read off a list containing only what is open.
 
 ### Performance
 

@@ -37,6 +37,18 @@ export default {
       borderRadius: {
         card: '12px',
       },
+      // The nudge a checkbox gives when it is ticked. Small enough to read as
+      // the control responding rather than as something moving on the page,
+      // which matters most where forty of them tick at once on Select all.
+      keyframes: {
+        'check-pop': {
+          '0%, 100%': { transform: 'scale(1)' },
+          '50%': { transform: 'scale(1.12)' },
+        },
+      },
+      animation: {
+        'check-pop': 'check-pop 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+      },
     },
   },
   plugins: [],

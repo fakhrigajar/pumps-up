@@ -53,11 +53,40 @@ export default function App() {
   // Everything logged up to this moment has been seen. A watermark rather
   // than a read flag on every entry: marking the log read is one number to
   // move, and an entry issued after that moment is unread on its own terms.
+  //
+  // It lives on the account, server-side, and arrives with the session — so a
+  // feed that has been read stays read through a reload, a sign-out, and a
+  // sign-in from another machine. Held in state as well because the badge has
+  // to clear on the click rather than on the round trip.
   const [readThroughAt, setReadThroughAt] = useState(0);
+
+  useEffect(() => {
+    setReadThroughAt(
+      signedIn?.activityReadThrough
+        ? new Date(signedIn.activityReadThrough).getTime()
+        : 0,
+    );
+  }, [signedIn?.login, signedIn?.activityReadThrough]);
+
   const unreadActivity = activityLog.filter(
     (entry) => new Date(entry.at).getTime() > readThroughAt,
   ).length;
-  const markActivityRead = useCallback(() => setReadThroughAt(Date.now()), []);
+
+  const markActivityRead = useCallback(() => {
+    if (!signedIn) return;
+    // Cleared at once, then corrected to whatever the server recorded. The
+    // badge answering the click is the whole point of it; waiting on the
+    // request would make pressing the bell feel like it had missed.
+    setReadThroughAt(Date.now());
+    activityApi
+      .markRead()
+      .then(setReadThroughAt)
+      .catch(() => {
+        // The mark did not stick. Nothing to say about it — the reader has
+        // still seen the entries, and the badge comes back on the next reload
+        // rather than a failure notice landing over an unrelated screen.
+      });
+  }, [signedIn?.login]);
 
   // What every signed-in role needs, fetched once per session rather than
   // shipped as static data: the catalogue (Sales needs it too, not just
