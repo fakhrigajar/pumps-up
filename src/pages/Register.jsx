@@ -21,17 +21,6 @@ import { useAsync } from "../api/useAsync";
 
 const ALL_CASHIERS = "all";
 
-/**
- * Register sessions — a shift per row, newest first.
- *
- * The same screen serves both roles, because the difference between them is
- * which shifts exist as far as they are concerned rather than what a shift
- * looks like: an admin is handed every cashier's and a filter to pick between
- * them, a cashier is handed their own and no filter, and neither is a view of
- * the other's page with parts hidden. The server already scopes a cashier's
- * request to their own shifts, so `mine` below is a no-op for that role —
- * kept anyway so this reads the same regardless of what the server did.
- */
 export function Register({ users }) {
   const { t } = useTranslation();
   const { user } = useSession();
@@ -135,7 +124,9 @@ export function Register({ users }) {
           <table className="w-full border-separate border-spacing-0 text-left text-[13px]">
             <thead>
               <tr>
-                {admin ? <Th className="pl-5">{t("reg.col.cashier")}</Th> : null}
+                {admin ? (
+                  <Th className="pl-5">{t("reg.col.cashier")}</Th>
+                ) : null}
                 <Th className={admin ? "" : "pl-5"}>{t("reg.col.date")}</Th>
                 <Th>{t("reg.col.opened")}</Th>
                 <Th>{t("reg.col.closed")}</Th>
@@ -220,7 +211,9 @@ function SessionRows({
         }`}
       >
         {admin ? (
-          <td className={`py-2.5 pl-5 pr-4 align-top font-medium text-ink-1 ${border}`}>
+          <td
+            className={`py-2.5 pl-5 pr-4 align-top font-medium text-ink-1 ${border}`}
+          >
             {session.cashier}
           </td>
         ) : null}
@@ -231,14 +224,18 @@ function SessionRows({
           {formatDate(session.date)}
         </td>
 
-        <td className={`py-2.5 pr-4 align-top tabular-nums text-ink-2 ${border}`}>
+        <td
+          className={`py-2.5 pr-4 align-top tabular-nums text-ink-2 ${border}`}
+        >
           <ClockCell
             at={session.openedAt}
             status={openingStatus(session.openedAt, hours.opensAt)}
           />
         </td>
 
-        <td className={`py-2.5 pr-4 align-top tabular-nums text-ink-2 ${border}`}>
+        <td
+          className={`py-2.5 pr-4 align-top tabular-nums text-ink-2 ${border}`}
+        >
           {open ? (
             <span
               className="inline-flex items-center gap-1.5 font-medium"
@@ -259,10 +256,14 @@ function SessionRows({
           )}
         </td>
 
-        <td className={`py-2.5 pr-4 text-right align-top tabular-nums text-ink-2 ${border}`}>
+        <td
+          className={`py-2.5 pr-4 text-right align-top tabular-nums text-ink-2 ${border}`}
+        >
           {formatNumber(totals.orders)}
         </td>
-        <td className={`py-2.5 pr-4 text-right align-top tabular-nums text-ink-2 ${border}`}>
+        <td
+          className={`py-2.5 pr-4 text-right align-top tabular-nums text-ink-2 ${border}`}
+        >
           {formatNumber(totals.units)}
         </td>
         <td
@@ -274,7 +275,10 @@ function SessionRows({
 
       {expanded ? (
         <tr>
-          <td colSpan={admin ? 7 : 6} className="border-b border-line bg-surface-2 px-5 py-3">
+          <td
+            colSpan={admin ? 7 : 6}
+            className="border-b border-line bg-surface-2 px-5 py-3"
+          >
             <p className="text-[12px] font-medium uppercase tracking-wider text-ink-3">
               {t("reg.products")}
             </p>

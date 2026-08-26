@@ -3,6 +3,7 @@ import { Modal, ModalFooter } from "../ui/Modal";
 import { Button } from "../ui/Button";
 import { formatPrice } from "../../lib/format";
 import { useTranslation } from "../../i18n/context";
+import { usePending } from "../../lib/usePending";
 
 const toCents = (value) => Math.round(value * 100) / 100;
 
@@ -25,6 +26,7 @@ export function SellDialog({ lines, payment, onCancel, onConfirm }) {
     Object.fromEntries(lines.map((line) => [line.sku, String(line.sellingPrice)])),
   );
   const [error, setError] = useState(null);
+  const [selling, runSell] = usePending();
 
   function handleDiscount(value) {
     setDiscount(value);
@@ -63,12 +65,14 @@ export function SellDialog({ lines, payment, onCancel, onConfirm }) {
     });
     if (invalid) return setError(t("err.soldFor"));
 
-    return onConfirm(
-      lines.map((line) => ({
-        sku: line.sku,
-        qty: line.qty,
-        soldFor: parseMoney(soldFor[line.sku]),
-      })),
+    return runSell(() =>
+      onConfirm(
+        lines.map((line) => ({
+          sku: line.sku,
+          qty: line.qty,
+          soldFor: parseMoney(soldFor[line.sku]),
+        })),
+      ),
     );
   }
 
@@ -178,9 +182,11 @@ export function SellDialog({ lines, payment, onCancel, onConfirm }) {
         </div>
 
         <ModalFooter>
-          <Button onClick={onCancel}>{t("dlg.cancel")}</Button>
-          <Button variant="primary" type="submit">
-            {t("sell.confirm")}
+          <Button onClick={onCancel} disabled={selling}>
+            {t("dlg.cancel")}
+          </Button>
+          <Button variant="primary" type="submit" pending={selling}>
+            {selling ? t("sell.selling") : t("sell.confirm")}
           </Button>
         </ModalFooter>
       </form>

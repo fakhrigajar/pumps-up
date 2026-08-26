@@ -14,6 +14,7 @@ import {
 } from "../../data/users";
 import { useTranslation } from "../../i18n/context";
 import { mapApiError } from "../../api/errors";
+import { usePending } from "../../lib/usePending";
 
 function Field({ label, hint, children }) {
   return (
@@ -51,6 +52,7 @@ export function UserFormDialog({ users, onCancel, onSubmit }) {
   });
   const [revealed, setRevealed] = useState(false);
   const [error, setError] = useState(null);
+  const [creating, runCreate] = usePending();
 
   const set = (key) => (value) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -79,7 +81,9 @@ export function UserFormDialog({ users, onCancel, onSubmit }) {
     }
 
     try {
-      return await onSubmit({ login, password: form.password, role: form.role });
+      return await runCreate(() =>
+        onSubmit({ login, password: form.password, role: form.role }),
+      );
     } catch (err) {
       return setError(mapApiError(err, t));
     }
@@ -183,9 +187,11 @@ export function UserFormDialog({ users, onCancel, onSubmit }) {
         </div>
 
         <ModalFooter>
-          <Button onClick={onCancel}>{t("dlg.cancel")}</Button>
-          <Button variant="primary" type="submit">
-            {t("udlg.create")}
+          <Button onClick={onCancel} disabled={creating}>
+            {t("dlg.cancel")}
+          </Button>
+          <Button variant="primary" type="submit" pending={creating}>
+            {creating ? t("udlg.creating") : t("udlg.create")}
           </Button>
         </ModalFooter>
       </form>
@@ -195,6 +201,7 @@ export function UserFormDialog({ users, onCancel, onSubmit }) {
 
 export function DeleteUserDialog({ user, onCancel, onConfirm }) {
   const { t } = useTranslation();
+  const [deleting, runDelete] = usePending();
 
   return (
     <Modal ariaLabel={t("udlg.confirmTitle")} onClose={onCancel}>
@@ -234,10 +241,16 @@ export function DeleteUserDialog({ user, onCancel, onConfirm }) {
       </div>
 
       <ModalFooter>
-        <Button onClick={onCancel}>{t("udlg.confirmKeep")}</Button>
-        <Button variant="destructive" onClick={onConfirm}>
+        <Button onClick={onCancel} disabled={deleting}>
+          {t("udlg.confirmKeep")}
+        </Button>
+        <Button
+          variant="destructive"
+          pending={deleting}
+          onClick={() => runDelete(onConfirm)}
+        >
           <IconTrash className="h-4 w-4" />
-          {t("udlg.confirmDelete")}
+          {deleting ? t("dlg.deleting") : t("udlg.confirmDelete")}
         </Button>
       </ModalFooter>
     </Modal>

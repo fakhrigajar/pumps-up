@@ -16,6 +16,8 @@ import { ModulePlaceholder } from "./pages/ModulePlaceholder";
 import { canOpen, NAV_ITEMS, pagesFor } from "./navigation";
 import { useTranslation } from "./i18n/context";
 import { findByBarcode } from "./data/erp";
+import { sessionTotals } from "./data/register";
+import { formatPrice } from "./lib/format";
 import { SessionContext } from "./auth/context";
 import { useSessionState } from "./auth/useSessionState";
 import { products as productsApi } from "./api/products";
@@ -95,39 +97,77 @@ export default function App() {
     };
   }, [signedIn?.login, signedIn?.role]);
 
+  // Every mutation below says so when it lands. The dialogs already report
+  // their own failures inline, next to the field that caused them, so what is
+  // missing is the other half: a row changing behind a dialog that has just
+  // closed is not, on its own, confirmation that the server agreed.
   const addProducts = useCallback(async (newProducts) => {
     const { products: created, activity: entries } = await productsApi.add(newProducts);
     setProductList((list) => [...created, ...list]);
     setActivityLog((log) => [...entries, ...log]);
+    // Naming the product only reads right when there is exactly one, and
+    // that is not the same question as which plural form to use: Russian
+    // puts 21 in its `one` category, so the choice is made here rather than
+    // left to a `_one` template that quietly drops the count.
+    notify(
+      created.length === 1
+        ? t("toast.added", { name: created[0].name })
+        : t("toast.addedCount", { count: created.length }),
+      "success",
+    );
     return created;
-  }, []);
+  }, [notify, t]);
 
+  // The name comes back on the log entry rather than out of the catalogue:
+  // by the time there is something to announce, the product it named is gone
+  // from the list this would have looked it up in.
   const deleteProduct = useCallback(async (sku) => {
     const { sku: deletedSku, activity: entries } = await productsApi.remove(sku);
     setProductList((list) => list.filter((item) => item.sku !== deletedSku));
     setActivityLog((log) => [...entries, ...log]);
-  }, []);
+    notify(t("toast.deleted", { name: entries[0]?.name ?? deletedSku }), "success");
+  }, [notify, t]);
 
   const returnProduct = useCallback(async (sku, units, reason) => {
     const { product, activity: entries } = await productsApi.returnStock(sku, units, reason);
     setProductList((list) => list.map((item) => (item.sku === product.sku ? product : item)));
     setActivityLog((log) => [...entries, ...log]);
-  }, []);
+    notify(t("toast.returned", { count: units, name: product.name }), "success");
+  }, [notify, t]);
 
   const updateProduct = useCallback(async (sku, changes) => {
     const { product, activity: entries } = await productsApi.update(sku, changes);
     setProductList((list) => list.map((item) => (item.sku === product.sku ? product : item)));
     setActivityLog((log) => [...entries, ...log]);
+    notify(t("toast.updated", { name: product.name }), "success");
     return product;
-  }, []);
+  }, [notify, t]);
 
+  // Nothing downstream catches these — the register bar calls them straight
+  // from its buttons — so they answer for themselves, either way.
   const openRegister = useCallback(async () => {
-    setOpenShift(await ordersApi.open());
-  }, []);
+    try {
+      setOpenShift(await ordersApi.open());
+      notify(t("toast.registerOpened"), "success");
+    } catch (error) {
+      notify(mapApiError(error, t), "error");
+    }
+  }, [notify, t]);
 
+  // The takings are read off the shift being closed, before the call: what
+  // comes back is a till with no session on it, which is the point.
   const closeRegister = useCallback(async () => {
-    setOpenShift(await ordersApi.close());
-  }, []);
+    const takings = openShift ? sessionTotals(openShift).revenue : 0;
+    try {
+      setOpenShift(await ordersApi.close());
+      notify(
+        t("toast.registerClosed", { total: formatPrice(takings) }),
+        "success",
+      );
+    } catch (error) {
+      notify(mapApiError(error, t), "error");
+    }
+  }, [notify, t, openShift]);
 
   const [saleLines, setSaleLines] = useState([]);
   const [payment, setPayment] = useState("cash");
@@ -181,19 +221,30 @@ export default function App() {
       if (result.session) setOpenShift(result.session);
       setActivityLog((log) => [...result.activity, ...log]);
       setSaleLines([]);
+      notify(
+        t("toast.sold", {
+          count: sold.reduce((units, line) => units + line.qty, 0),
+          total: formatPrice(
+            sold.reduce((sum, line) => sum + line.qty * line.soldFor, 0),
+          ),
+        }),
+        "success",
+      );
     },
-    [payment],
+    [payment, notify, t],
   );
 
   const addUser = useCallback(async (user) => {
     const created = await usersApi.add(user);
     setUserList((list) => [created, ...list]);
-  }, []);
+    notify(t("toast.userAdded", { name: created.login }), "success");
+  }, [notify, t]);
 
   const deleteUser = useCallback(async (login) => {
     await usersApi.remove(login);
     setUserList((list) => list.filter((user) => user.login !== login));
-  }, []);
+    notify(t("toast.userDeleted", { name: login }), "success");
+  }, [notify, t]);
 
   // An account editing itself on the settings screen. The session follows a
   // rename in the same breath the list is rewritten, so a rename reads as a
@@ -235,16 +286,21 @@ export default function App() {
     const tillClosed = signedIn?.role === "cashier" && !openShift;
     const inSale = saleLines.find((line) => line.sku === product?.sku)?.qty ?? 0;
 
+    // A code that matched nothing is a failure; a till that is not open yet
+    // and a product already rung up to its last unit are both the scan
+    // working correctly and finding a reason not to proceed. Same beep — the
+    // hand reaching for the next item needs stopping either way — but the
+    // card that explains it is not red for the two that are recoverable.
     const problem = !product
-      ? t("scan.notFound")
+      ? { message: t("scan.notFound"), tone: "error" }
       : tillClosed
-        ? t("reg.closedHint")
+        ? { message: t("reg.closedHint"), tone: "warning" }
         : inSale >= product.stock
-          ? t("scan.noStock", { name: product.name })
+          ? { message: t("scan.noStock", { name: product.name }), tone: "warning" }
           : null;
 
     if (problem) {
-      notify(problem, "error");
+      notify(problem.message, problem.tone);
       errorBeep();
       return;
     }
@@ -309,6 +365,7 @@ export default function App() {
               onClear={clearSale}
               onSell={completeSale}
               onSellError={(error) => notify(mapApiError(error, t), "error")}
+              onReturn={returnProduct}
               barHeight={sidebarFooterHeight || SALE_PANEL_HEIGHT}
               lastScan={lastScan}
               register={{
@@ -324,7 +381,6 @@ export default function App() {
               onAdd={addProducts}
               onUpdate={updateProduct}
               onDelete={deleteProduct}
-              onReturn={returnProduct}
             />
           ) : page === "reports" ? (
             <Reports />

@@ -3,13 +3,15 @@ import { ProductSearch } from "../components/panels/ProductSearch";
 import { ProductTable } from "../components/panels/ProductTable";
 import { SaleBadge, SalePanel } from "../components/panels/SalePanel";
 import { SellDialog } from "../components/panels/SellDialog";
+import { ReturnProductDialog } from "../components/panels/ProductDialogs";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
-import { IconRegister } from "../components/Icons";
+import { IconRegister, IconReturn } from "../components/Icons";
 import { filterProducts } from "../data/erp";
 import { formatClockTime, formatPrice } from "../lib/format";
 import { sessionTotals } from "../data/register";
 import { useTranslation } from "../i18n/context";
+import { usePending } from "../lib/usePending";
 
 export function Sales({
   products,
@@ -22,6 +24,7 @@ export function Sales({
   onClear,
   onSell,
   onSellError,
+  onReturn,
   barHeight,
   register,
   lastScan,
@@ -29,6 +32,7 @@ export function Sales({
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [selling, setSelling] = useState(false);
+  const [returning, setReturning] = useState(false);
   const panelRef = useRef(null);
 
   // A till that has to be opened is a cashier's; an admin ringing something up
@@ -105,6 +109,17 @@ export function Sales({
             return qty > 0 ? <SaleBadge qty={qty} /> : null;
           }}
           filtering={query.trim().length > 0}
+          actions={
+            <Button
+              variant="warning"
+              onClick={() => setReturning(true)}
+              disabled={locked}
+              title={locked ? t("reg.lockedHint") : undefined}
+            >
+              <IconReturn className="h-4 w-4" />
+              {t("sales.return")}
+            </Button>
+          }
         />
       </div>
 
@@ -136,6 +151,17 @@ export function Sales({
           }}
         />
       ) : null}
+
+      {returning ? (
+        <ReturnProductDialog
+          products={products}
+          onCancel={() => setReturning(false)}
+          onConfirm={async (sku, units, reason) => {
+            await onReturn(sku, units, reason);
+            setReturning(false);
+          }}
+        />
+      ) : null}
     </>
   );
 }
@@ -151,6 +177,7 @@ export function Sales({
 function RegisterBar({ register, locked }) {
   const { t } = useTranslation();
   const [confirming, setConfirming] = useState(false);
+  const [working, run] = usePending();
 
   const totals = register.session ? sessionTotals(register.session) : null;
 
@@ -167,43 +194,54 @@ function RegisterBar({ register, locked }) {
 
         <div className="min-w-0">
           <p className="text-[13px] font-medium text-ink-1">
-            {locked ? t("reg.closed") : t("reg.openSince", {
-              time: formatClockTime(register.session.openedAt),
-            })}
+            {locked
+              ? t("reg.closed")
+              : t("reg.openSince", {
+                  time: formatClockTime(register.session.openedAt),
+                })}
           </p>
           <p className="text-[12px] text-ink-3">
             {locked
               ? t("reg.closedHint")
-              : `${t("reg.ordersCount", { count: totals.orders })} · ${t("reg.units", {
-                  count: totals.units,
-                })} · ${formatPrice(totals.revenue)}`}
+              : `${t("reg.ordersCount", { count: totals.orders })} · ${t(
+                  "reg.units",
+                  {
+                    count: totals.units,
+                  },
+                )} · ${formatPrice(totals.revenue)}`}
           </p>
         </div>
 
         <div className="ml-auto flex items-center gap-2">
           {confirming ? (
             <>
-              <p className="text-[12.5px] text-ink-2">{t("reg.confirmClose")}</p>
-              <Button onClick={() => setConfirming(false)}>
+              <p className="text-[12.5px] text-ink-2">
+                {t("reg.confirmClose")}
+              </p>
+              <Button onClick={() => setConfirming(false)} disabled={working}>
                 {t("dlg.cancel")}
               </Button>
               <Button
                 variant="destructive"
-                onClick={() => {
-                  setConfirming(false);
-                  register.onClose();
-                }}
+                pending={working}
+                onClick={() =>
+                  run(register.onClose).then(() => setConfirming(false))
+                }
               >
-                {t("reg.close")}
+                {working ? t("reg.closing") : t("reg.close")}
               </Button>
             </>
           ) : locked ? (
-            <Button variant="primary" onClick={register.onOpen}>
-              <IconRegister className="h-4 w-4" />
-              {t("reg.openRegister")}
+            <Button
+              variant="primary"
+              pending={working}
+              onClick={() => run(register.onOpen)}
+            >
+              {working ? null : <IconRegister className="h-4 w-4" />}
+              {working ? t("reg.opening") : t("reg.openRegister")}
             </Button>
           ) : (
-            <Button onClick={() => setConfirming(true)}>
+            <Button onClick={() => setConfirming(true)} disabled={working}>
               <IconRegister className="h-4 w-4" />
               {t("reg.close")}
             </Button>

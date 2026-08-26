@@ -2,7 +2,7 @@ import { useId, useState } from 'react'
 import { Modal, ModalFooter } from '../ui/Modal'
 import { Button } from '../ui/Button'
 import { NumberStepper } from '../ui/NumberStepper'
-import { IconAlert, IconPlus, IconTrash } from '../Icons'
+import { IconAlert, IconPlus, IconSearch, IconTrash } from '../Icons'
 import { Select } from '../ui/Select'
 import { formatNumber, formatPrice } from '../../lib/format'
 import {
@@ -10,6 +10,7 @@ import {
   categories,
   colorCodePrefix,
   colorSkuStem,
+  filterProducts,
   listingName,
   pickDigits,
   productCode,
@@ -19,6 +20,7 @@ import {
 } from '../../data/erp'
 import { useTranslation } from '../../i18n/context'
 import { mapApiError } from '../../api/errors'
+import { usePending } from '../../lib/usePending'
 
 function Field({ label, hint, children }) {
   return (
@@ -161,6 +163,7 @@ export function ProductFormDialog({
   // fields fill in. Unused, and harmless, when editing or adding a Shoe.
   const [bagDigits] = useState(() => randomDigits4())
   const [error, setError] = useState(null)
+  const [saving, runSave] = usePending()
 
   const set = (key) => (event) => {
     setForm({ ...form, [key]: event.target.value })
@@ -280,7 +283,7 @@ export function ProductFormDialog({
 
       if (rows.length === 0) return setError(t('err.colorsEmpty'))
       try {
-        return await onSubmit(rows)
+        return await runSave(() => onSubmit(rows))
       } catch (err) {
         return setError(mapApiError(err, t))
       }
@@ -308,7 +311,7 @@ export function ProductFormDialog({
     if (!Number.isInteger(stock) || stock < 0) return setError(t('err.stock'))
 
     try {
-      return await onSubmit([
+      return await runSave(() => onSubmit([
         {
           name,
           sku: finalSku,
@@ -319,7 +322,7 @@ export function ProductFormDialog({
           purchasePrice,
           sellingPrice,
         },
-      ])
+      ]))
     } catch (err) {
       return setError(mapApiError(err, t))
     }
@@ -452,9 +455,13 @@ export function ProductFormDialog({
               {t('dlg.remove')}
             </Button>
           ) : null}
-          <Button onClick={onCancel}>{t('dlg.cancel')}</Button>
-          <Button variant="primary" type="submit">
-            {t(editing ? 'dlg.save' : 'dlg.addTitle')}
+          <Button onClick={onCancel} disabled={saving}>
+            {t('dlg.cancel')}
+          </Button>
+          <Button variant="primary" type="submit" pending={saving}>
+            {saving
+              ? t(editing ? 'dlg.saving' : 'dlg.adding')
+              : t(editing ? 'dlg.save' : 'dlg.addTitle')}
           </Button>
         </ModalFooter>
       </form>
@@ -464,6 +471,7 @@ export function ProductFormDialog({
 
 export function DeleteProductDialog({ product, onCancel, onConfirm }) {
   const { t } = useTranslation()
+  const [deleting, runDelete] = usePending()
 
   return (
     <Modal ariaLabel={t('dlg.confirmTitle')} onClose={onCancel}>
@@ -495,21 +503,105 @@ export function DeleteProductDialog({ product, onCancel, onConfirm }) {
       </div>
 
       <ModalFooter>
-        <Button onClick={onCancel}>{t('dlg.confirmKeep')}</Button>
-        <Button variant="destructive" onClick={onConfirm}>
+        <Button onClick={onCancel} disabled={deleting}>
+          {t('dlg.confirmKeep')}
+        </Button>
+        <Button
+          variant="destructive"
+          pending={deleting}
+          onClick={() => runDelete(onConfirm)}
+        >
           <IconTrash className="h-4 w-4" />
-          {t('dlg.confirmDelete')}
+          {deleting ? t('dlg.deleting') : t('dlg.confirmDelete')}
         </Button>
       </ModalFooter>
     </Modal>
   )
 }
 
-export function ReturnProductDialog({ product, onCancel, onConfirm }) {
+/**
+ * A return, from the till: which product is coming back, then how many and why.
+ *
+ * The sale screen has no selected row to start from — clicking a product there
+ * puts it in the basket — so the dialog picks its own, out of the whole
+ * catalogue rather than the sellable part of it. Something returned is very
+ * often something the shelf has none of, which is exactly what a return fixes.
+ */
+export function ReturnProductDialog({ products, onCancel, onConfirm }) {
+  const [sku, setSku] = useState(null)
+  const product = products.find((item) => item.sku === sku) ?? null
+
+  if (!product) {
+    return <ReturnPicker products={products} onCancel={onCancel} onPick={setSku} />
+  }
+
+  return (
+    <ReturnForm
+      product={product}
+      onBack={() => setSku(null)}
+      onCancel={onCancel}
+      onConfirm={(units, reason) => onConfirm(product.sku, units, reason)}
+    />
+  )
+}
+
+function ReturnPicker({ products, onCancel, onPick }) {
+  const { t } = useTranslation()
+  const [query, setQuery] = useState('')
+  const matches = filterProducts(products, query)
+
+  return (
+    <Modal title={t('dlg.retTitle')} description={t('dlg.retPickDesc')} onClose={onCancel}>
+      <div className="space-y-3 px-5 py-4">
+        <label className="relative block">
+          <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-3" />
+          <input
+            type="text"
+            autoFocus
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={t('inv.search')}
+            aria-label={t('inv.searchLabel')}
+            className="h-9 w-full rounded-lg border border-line bg-surface-2 pl-9 pr-3 text-[13px] text-ink-1 placeholder:text-ink-3 focus:bg-surface-1"
+          />
+        </label>
+
+        {matches.length === 0 ? (
+          <p className="py-6 text-center text-[13px] text-ink-3">{t('inv.noMatch')}</p>
+        ) : (
+          <ul className="max-h-[280px] space-y-1 overflow-y-auto">
+            {matches.map((item) => (
+              <li key={item.sku}>
+                <button
+                  type="button"
+                  onClick={() => onPick(item.sku)}
+                  className="w-full rounded-lg border border-line bg-surface-2 px-3 py-2.5 text-left hover:bg-surface-3"
+                >
+                  <p className="text-[13px] font-medium text-ink-1">{item.name}</p>
+                  <p className="text-[11.5px] tabular-nums text-ink-3">
+                    {item.sku} · {t('dlg.onHand', { count: formatNumber(item.stock) })} ·{' '}
+                    {formatPrice(item.sellingPrice)}
+                  </p>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <ModalFooter>
+        <Button onClick={onCancel}>{t('dlg.cancel')}</Button>
+      </ModalFooter>
+    </Modal>
+  )
+}
+
+function ReturnForm({ product, onBack, onCancel, onConfirm }) {
   const { t } = useTranslation()
   const [quantity, setQuantity] = useState('1')
   const [reason, setReason] = useState('')
   const [error, setError] = useState(null)
+  const [returning, runReturn] = usePending()
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -518,7 +610,7 @@ export function ReturnProductDialog({ product, onCancel, onConfirm }) {
     const trimmedReason = reason.trim()
     if (!trimmedReason) return setError(t('err.reason'))
     try {
-      return await onConfirm(units, trimmedReason)
+      return await runReturn(() => onConfirm(units, trimmedReason))
     } catch (err) {
       return setError(mapApiError(err, t))
     }
@@ -531,12 +623,17 @@ export function ReturnProductDialog({ product, onCancel, onConfirm }) {
     <Modal title={t('dlg.retTitle')} description={t('dlg.retDesc')} onClose={onCancel}>
       <form onSubmit={handleSubmit}>
         <div className="space-y-3 px-5 py-4">
-          <div className="rounded-lg border border-line bg-surface-2 px-3 py-2.5">
-            <p className="text-[13px] font-medium text-ink-1">{product.name}</p>
-            <p className="text-[11.5px] tabular-nums text-ink-3">
-              {product.sku} · {t('dlg.onHand', { count: formatNumber(product.stock) })} ·{' '}
-              {formatPrice(product.sellingPrice)}
-            </p>
+          <div className="flex items-center gap-3 rounded-lg border border-line bg-surface-2 px-3 py-2.5">
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-medium text-ink-1">{product.name}</p>
+              <p className="text-[11.5px] tabular-nums text-ink-3">
+                {product.sku} · {t('dlg.onHand', { count: formatNumber(product.stock) })} ·{' '}
+                {formatPrice(product.sellingPrice)}
+              </p>
+            </div>
+            <Button size="sm" onClick={onBack} disabled={returning}>
+              {t('dlg.retChange')}
+            </Button>
           </div>
 
           <FieldGroup
@@ -582,9 +679,11 @@ export function ReturnProductDialog({ product, onCancel, onConfirm }) {
         </div>
 
         <ModalFooter>
-          <Button onClick={onCancel}>{t('dlg.cancel')}</Button>
-          <Button variant="primary" type="submit">
-            {t('dlg.retConfirm')}
+          <Button onClick={onCancel} disabled={returning}>
+            {t('dlg.cancel')}
+          </Button>
+          <Button variant="warning" type="submit" pending={returning}>
+            {returning ? t('dlg.returning') : t('dlg.retConfirm')}
           </Button>
         </ModalFooter>
       </form>

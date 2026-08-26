@@ -5,6 +5,7 @@ import { ThemeToggle } from "../components/ThemeToggle";
 import { LanguageMenu } from "../components/LanguageMenu";
 import { IconAlert } from "../components/Icons";
 import { useTranslation } from "../i18n/context";
+import { usePending } from "../lib/usePending";
 
 const fieldClass =
   "mt-1 h-10 w-full rounded-lg border border-line bg-surface-2 px-3 text-[14px] text-ink-1 placeholder:text-ink-3 focus:bg-surface-1";
@@ -25,13 +26,11 @@ export function Login({ onSignIn }) {
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [submitting, run] = usePending();
 
   async function handleSubmit(event) {
     event.preventDefault();
-    setSubmitting(true);
-    const signedIn = await onSignIn(login, password);
-    setSubmitting(false);
+    const signedIn = await run(() => onSignIn(login, password));
     if (!signedIn) setError(true);
   }
 
@@ -111,15 +110,12 @@ export function Login({ onSignIn }) {
               type="submit"
               variant="primary"
               className="mt-4 h-10 w-full justify-center text-[14px]"
-              disabled={login.trim() === "" || password === "" || submitting}
+              disabled={login.trim() === "" || password === ""}
+              pending={submitting}
             >
-              {t("login.submit")}
+              {submitting ? t("login.submitting") : t("login.submit")}
             </Button>
           </form>
-
-          <p className="mt-4 text-center text-[11.5px] leading-relaxed text-ink-3">
-            {t("login.demo")}
-          </p>
         </div>
       </main>
     </div>

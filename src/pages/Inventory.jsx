@@ -2,11 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ProductSearch } from "../components/panels/ProductSearch";
 import { ProductTable } from "../components/panels/ProductTable";
 import { Button } from "../components/ui/Button";
-import { IconEdit, IconPlus, IconPrint, IconReturn } from "../components/Icons";
+import { IconEdit, IconPlus, IconPrint } from "../components/Icons";
 import {
   DeleteProductDialog,
   ProductFormDialog,
-  ReturnProductDialog,
 } from "../components/panels/ProductDialogs";
 import { PrintLabelsDialog } from "../components/panels/PrintLabelsDialog";
 import { LabelSheet } from "../components/panels/LabelSheet";
@@ -16,7 +15,7 @@ import { useTranslation } from "../i18n/context";
 import { useToast } from "../toast/context";
 import { mapApiError } from "../api/errors";
 
-export function Inventory({ products, onAdd, onUpdate, onDelete, onReturn }) {
+export function Inventory({ products, onAdd, onUpdate, onDelete }) {
   const { t } = useTranslation();
   const { notify } = useToast();
   // The design saved in Tools → label designer, which is what every label
@@ -147,14 +146,6 @@ export function Inventory({ products, onAdd, onUpdate, onDelete, onReturn }) {
               {t("inv.edit")}
             </Button>
             <Button
-              onClick={() => setDialog("return")}
-              disabled={!hasSelection}
-              title={hasSelection ? undefined : t("inv.selectFirst")}
-            >
-              <IconReturn className="h-4 w-4" />
-              {t("inv.return")}
-            </Button>
-            <Button
               onClick={() => setDialog("print")}
               disabled={checkedProducts.length === 0}
               title={
@@ -209,17 +200,6 @@ export function Inventory({ products, onAdd, onUpdate, onDelete, onReturn }) {
             } catch (error) {
               notify(mapApiError(error, t), "error");
             }
-          }}
-        />
-      ) : null}
-
-      {dialog === "return" && selected ? (
-        <ReturnProductDialog
-          product={selected}
-          onCancel={closeDialog}
-          onConfirm={async (units, reason) => {
-            await onReturn(selected.sku, units, reason);
-            closeDialog();
           }}
         />
       ) : null}

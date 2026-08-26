@@ -24,21 +24,13 @@ import { useStoreSettings } from "../settings/context";
 import { useSession } from "../auth/context";
 import { useTranslation } from "../i18n/context";
 import { mapApiError } from "../api/errors";
+import { usePending } from "../lib/usePending";
 
 const PREVIEW_AMOUNT = 1234.5;
 
 const inputClass =
   "mt-1 h-9 w-full rounded-lg border border-line bg-surface-2 px-3 text-[13px] text-ink-1 placeholder:text-ink-3 focus:bg-surface-1";
 
-/**
- * The back office's own settings: what the shop trades in, when it is open,
- * and who the person reading this signs in as.
- *
- * The two shop settings apply the moment they are changed, the way the theme
- * and the language do — there is one right answer and no draft of it worth
- * keeping. The account settings are the opposite: a half-typed password is
- * not a password, so they are forms that are submitted and answered.
- */
 export function Settings({ users, onUpdateAccount }) {
   const { t } = useTranslation();
   const { settings, update } = useStoreSettings();
@@ -48,7 +40,7 @@ export function Settings({ users, onUpdateAccount }) {
     clockToMinutes(settings.closesAt) <= clockToMinutes(settings.opensAt);
 
   return (
-    <div className="mx-auto w-full max-w-[720px] space-y-4">
+    <div className="mx-auto w-full space-y-4">
       <p className="text-[13px] text-ink-2">{t("set.desc")}</p>
 
       <Section
@@ -192,6 +184,7 @@ function LoginForm({ users, user, onSubmit }) {
   const [value, setValue] = useState(user.login);
   const [error, setError] = useState(null);
   const [saved, setSaved] = useState(null);
+  const [saving, runSave] = usePending();
 
   const login = normalizeLogin(value);
   const unchanged = login === user.login;
@@ -214,7 +207,7 @@ function LoginForm({ users, user, onSubmit }) {
     }
 
     try {
-      await onSubmit(login);
+      await runSave(() => onSubmit(login));
     } catch (err) {
       return setError(mapApiError(err, t));
     }
@@ -246,8 +239,13 @@ function LoginForm({ users, user, onSubmit }) {
           />
         </label>
 
-        <Button type="submit" variant="primary" disabled={unchanged}>
-          {t("set.save")}
+        <Button
+          type="submit"
+          variant="primary"
+          disabled={unchanged}
+          pending={saving}
+        >
+          {saving ? t("dlg.saving") : t("set.save")}
         </Button>
       </div>
 
@@ -264,6 +262,7 @@ function PasswordForm({ onSubmit }) {
   const [revealed, setRevealed] = useState(false);
   const [error, setError] = useState(null);
   const [saved, setSaved] = useState(null);
+  const [saving, runSave] = usePending();
 
   const set = (key) => (value) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -289,7 +288,7 @@ function PasswordForm({ onSubmit }) {
       // already signed in: a screen left unlocked is the ordinary case in a
       // shop, and it is the one thing standing between a passer-by and the
       // back office.
-      await onSubmit(form.next, form.current);
+      await runSave(() => onSubmit(form.next, form.current));
     } catch (err) {
       return setError(mapApiError(err, t));
     }
@@ -367,8 +366,9 @@ function PasswordForm({ onSubmit }) {
           type="submit"
           variant="primary"
           disabled={form.current === "" || form.next === ""}
+          pending={saving}
         >
-          {t("set.changePassword")}
+          {saving ? t("dlg.saving") : t("set.changePassword")}
         </Button>
       </div>
 

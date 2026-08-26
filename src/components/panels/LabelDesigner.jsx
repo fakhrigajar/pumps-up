@@ -35,6 +35,7 @@ import {
 } from "../../lib/labelTemplate";
 import { LABEL_MAX_MM, LABEL_MIN_MM } from "../../lib/labels";
 import { useTranslation } from "../../i18n/context";
+import { usePending } from "../../lib/usePending";
 
 const ALIGN_ICONS = {
   left: IconAlignLeft,
@@ -70,6 +71,7 @@ const SNAP_POSITIONS = [
 export function LabelDesigner({ product, onBack }) {
   const { t } = useTranslation();
   const { template: saved, save } = useLabelTemplate();
+  const [saving, runSave] = usePending();
   const [draft, setDraft] = useState(saved);
   // Opens on the product name: the piece most likely to need the room, and the
   // one whose settings show what the panel can do.
@@ -110,7 +112,12 @@ export function LabelDesigner({ product, onBack }) {
         {dirty ? (
           <Button onClick={() => setDraft(saved)}>{t("lbl.discard")}</Button>
         ) : null}
-        <Button variant="primary" onClick={() => save(draft)} disabled={!dirty}>
+        <Button
+          variant="primary"
+          onClick={() => runSave(() => save(draft))}
+          disabled={!dirty}
+          pending={saving}
+        >
           {t("lbl.save")}
         </Button>
       </div>

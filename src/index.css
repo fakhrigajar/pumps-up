@@ -53,6 +53,10 @@
   --status-serious: #ec835a;
   --status-critical: #d03b3b;
 
+  /* Ink that clears contrast on a full-strength status fill. The status hues
+     are fixed, so what sits on them is fixed with them. */
+  --on-status: #1b1400;
+
   /* Delta text: success needs to clear text contrast on the light surface */
   --delta-up: #006300;
   --delta-down: #b5302f;
@@ -104,6 +108,61 @@ body {
   background-color: var(--plane);
   color: var(--ink-1);
   -webkit-font-smoothing: antialiased;
+}
+
+/* --------------------------------------------------------------------------
+   Motion.
+
+   The spinner and the toast's progress bar are both readouts rather than
+   decoration — one says a request is still open, the other is the dismissal
+   timer made visible — so reduced motion trims the toast's entrance and
+   leaves the two that carry meaning running.
+   -------------------------------------------------------------------------- */
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes toast-progress {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+.spin {
+  animation: spin 700ms linear infinite;
+}
+
+.toast-enter {
+  animation: toast-in 180ms ease-out both;
+}
+
+.toast-progress {
+  animation-name: toast-progress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast-enter {
+    animation: none;
+  }
 }
 
 /* Theme swap should not animate every chart mark on every repaint, so the
