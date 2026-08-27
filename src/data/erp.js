@@ -188,6 +188,21 @@ export function listingName(name, color, size) {
 }
 
 /**
+ * The listing name with the variant taken back off it: "Nike Air Blue 41"
+ * read back as "Nike Air", for a label that gives the color and the size
+ * lines of their own rather than running all three together.
+ *
+ * Only the suffix `listingName` put there is removed, and only where it is
+ * still on the end — a Bag, a record whose name was since edited by hand, or
+ * anything else that does not match comes back untouched.
+ */
+export function baseName({ name, color, size }) {
+  const variant = [color, size].filter(Boolean).join(" ");
+  if (!variant || !name.endsWith(` ${variant}`)) return name;
+  return name.slice(0, -variant.length - 1);
+}
+
+/**
  * The random digits for one listing, retried against `usedIds` until the id
  * they produce is free. `usedIds` is the running set of ids this Add form has
  * minted so far in the same submit — the server is what checks against the

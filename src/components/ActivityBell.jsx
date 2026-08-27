@@ -7,7 +7,13 @@ import { useTranslation } from "../i18n/context";
  * show": a bell is a nudge to open the log, not a readout of it. */
 const BADGE_LIMIT = 9;
 
-export function ActivityBell({ entries, unread = 0, onRead, onViewMore }) {
+export function ActivityBell({
+  entries,
+  unread = 0,
+  readThrough = 0,
+  onMarkAllRead,
+  onViewMore,
+}) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const rootRef = useRef(null);
@@ -28,13 +34,11 @@ export function ActivityBell({ entries, unread = 0, onRead, onViewMore }) {
     };
   }, [open]);
 
-  // Pressing the bell is what marks the log read, whichever way it swings the
-  // panel: closing it after something arrived while it was open has still put
-  // that entry in front of the reader.
-  const toggle = () => {
-    setOpen((value) => !value);
-    onRead?.();
-  };
+  // Opening the panel reads nothing. Having the log in front of you is not
+  // the same as having read it, and a badge that cleared on the way in would
+  // take the entries the reader had not got to yet with it — the footer's
+  // button is the only thing that moves the watermark.
+  const toggle = () => setOpen((value) => !value);
 
   // Leaving for the full page closes the panel behind it: it is a dropdown
   // anchored to a bell, not a second window onto the screen now being opened.
@@ -78,6 +82,8 @@ export function ActivityBell({ entries, unread = 0, onRead, onViewMore }) {
           <ActivityLog
             entries={entries}
             limit={null}
+            newSince={readThrough}
+            onMarkAllRead={onMarkAllRead}
             onViewMore={viewMore}
             className="h-[380px] shadow-pop"
           />

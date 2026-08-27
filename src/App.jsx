@@ -75,8 +75,9 @@ export default function App() {
   const markActivityRead = useCallback(() => {
     if (!signedIn) return;
     // Cleared at once, then corrected to whatever the server recorded. The
-    // badge answering the click is the whole point of it; waiting on the
-    // request would make pressing the bell feel like it had missed.
+    // badge and the panel's own new marks answering the click are the whole
+    // point of it; waiting on the request would make the button feel like it
+    // had missed.
     setReadThroughAt(Date.now());
     activityApi
       .markRead()
@@ -368,6 +369,7 @@ export default function App() {
           onOpenNav={() => setNavOpen(true)}
           activityLog={activityLog}
           unreadActivity={unreadActivity}
+          activityReadThrough={readThroughAt}
           onActivityRead={markActivityRead}
           onViewActivity={
             canOpen("activity", signedIn.role)

@@ -682,7 +682,7 @@ function ReturnForm({ product, onBack, onCancel, onConfirm }) {
           <Button onClick={onCancel} disabled={returning}>
             {t('dlg.cancel')}
           </Button>
-          <Button variant="warning" type="submit" pending={returning}>
+          <Button variant="primary" type="submit" pending={returning}>
             {returning ? t('dlg.returning') : t('dlg.retConfirm')}
           </Button>
         </ModalFooter>

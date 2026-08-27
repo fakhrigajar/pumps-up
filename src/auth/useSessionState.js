@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { auth } from "../api/auth";
+import { clearAsyncCache } from "../api/useAsync";
 
 /**
  * The signed-in account, remembered for as long as this tab is open.
@@ -88,6 +89,10 @@ export function useSessionState() {
     // The cookie is cleared server-side first, so signing out is a real end
     // to the session rather than this tab merely forgetting about it.
     await auth.logout().catch(() => {});
+    // Anything fetched under the old session goes with it. A till is a shared
+    // machine: the next person to sign in gets their own answers, not a
+    // cached glimpse of the last shift's takings.
+    clearAsyncCache();
     setMarker(false);
     setUser(null);
   }, []);

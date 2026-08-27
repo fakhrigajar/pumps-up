@@ -31,7 +31,11 @@ export function Register({ users }) {
   const [cashier, setCashier] = useState(ALL_CASHIERS);
   const [openId, setOpenId] = useState(null);
 
-  const { data: sessions } = useAsync(() => ordersApi.sessions(), []);
+  const { data: sessions } = useAsync(
+    () => ordersApi.sessions(),
+    [],
+    "orders.sessions",
+  );
   const allSessions = sessions ?? [];
 
   const mine = useMemo(

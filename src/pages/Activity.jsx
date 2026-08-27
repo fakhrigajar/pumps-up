@@ -44,7 +44,7 @@ const MINUTE = 60_000;
 export function Activity() {
   const { t } = useTranslation();
   const [filter, setFilter] = useState("all");
-  const { data } = useAsync(() => activityApi.list(300), []);
+  const { data } = useAsync(() => activityApi.list(300), [], "activity.list");
   const entries = data ?? [];
 
   const [now, setNow] = useState(() => Date.now());

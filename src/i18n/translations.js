@@ -72,6 +72,8 @@ export const en = {
   "activity.title": "Activity log",
   "activity.subtitle": "Every action taken this session",
   "activity.empty": "No activity yet.",
+  "activity.new": "New",
+  "activity.markAllRead": "Mark all as read",
   "activity.unread_one": "{count} unread activity",
   "activity.unread_other": "{count} unread activities",
   "activity.viewMore": "View more",
@@ -354,6 +356,8 @@ export const en = {
   "lbl.el.logo": "Store logo",
   "lbl.el.store": "Store name",
   "lbl.el.name": "Product name",
+  "lbl.el.color": "Color",
+  "lbl.el.size": "Size",
   "lbl.el.barcode": "Barcode",
   "lbl.el.code": "Barcode number",
   "lbl.el.price": "Price",
@@ -391,6 +395,7 @@ export const en = {
   "lbl.saved": "Saved — labels printed from Inventory use this design.",
   "lbl.unsaved": "Unsaved changes",
   "lbl.sample": "Sample product",
+  "lbl.sampleColor": "Black",
 
   "dash.section.performance": "Performance",
   "dash.section.selling": "What is selling",
@@ -467,6 +472,9 @@ export const en = {
 
   "set.desc":
     "Currency and working hours apply across the whole system, for everybody signed in. Your login and password are yours alone.",
+  "set.tabs": "Settings sections",
+  "set.tab.system": "System",
+  "set.tab.account": "Account",
   "set.currency": "Currency",
   "set.currency.desc":
     "What every price, total and printed label is written in.",
@@ -478,6 +486,15 @@ export const en = {
   "set.opensAt": "Opens at",
   "set.closesAt": "Closes at",
   "set.hours.backwards": "The closing time is earlier than the opening time.",
+  "set.accent": "Accent color",
+  "set.accent.desc":
+    "The color the app leans on: buttons, selected rows, and the first series in a chart.",
+  "set.accent.hint":
+    "Applied straight away, and kept on this device — like the light and dark theme.",
+  "accent.blue": "Blue",
+  "accent.violet": "Violet",
+  "accent.magenta": "Magenta",
+  "accent.slate": "Slate",
   "set.login": "Username",
   "set.login.desc": "The login you sign in with. Changing it signs you straight back in under the new one.",
   "set.login.label": "Login",
@@ -500,6 +517,8 @@ export const en = {
   "cur.RUB": "Russian ruble",
 
   "err.currentPass": "That is not the current password.",
+  "err.needCurrentPass":
+    "Type your current password as well, to set a new one.",
   "err.samePass": "The new password is the same as the current one.",
   "err.confirmPass": "The two new passwords do not match.",
 
@@ -649,6 +668,8 @@ export const ru = {
   "activity.title": "Журнал действий",
   "activity.subtitle": "Все действия за эту сессию",
   "activity.empty": "Пока нет действий.",
+  "activity.new": "Новое",
+  "activity.markAllRead": "Отметить все как прочитанные",
   "activity.unread_one": "{count} непрочитанная запись",
   "activity.unread_few": "{count} непрочитанные записи",
   "activity.unread_many": "{count} непрочитанных записей",
@@ -951,6 +972,8 @@ export const ru = {
   "lbl.el.logo": "Логотип магазина",
   "lbl.el.store": "Название магазина",
   "lbl.el.name": "Название товара",
+  "lbl.el.color": "Цвет",
+  "lbl.el.size": "Размер",
   "lbl.el.barcode": "Штрихкод",
   "lbl.el.code": "Номер штрихкода",
   "lbl.el.price": "Цена",
@@ -988,6 +1011,7 @@ export const ru = {
   "lbl.saved": "Сохранено — этикетки со «Склада» печатаются по этому макету.",
   "lbl.unsaved": "Есть несохранённые изменения",
   "lbl.sample": "Образец товара",
+  "lbl.sampleColor": "Чёрный",
 
   "dash.section.performance": "Динамика",
   "dash.section.selling": "Что продаётся",
@@ -1076,6 +1100,9 @@ export const ru = {
 
   "set.desc":
     "Валюта и часы работы действуют во всей системе, для всех вошедших. Логин и пароль — только ваши.",
+  "set.tabs": "Разделы настроек",
+  "set.tab.system": "Система",
+  "set.tab.account": "Аккаунт",
   "set.currency": "Валюта",
   "set.currency.desc": "В ней пишутся все цены, итоги и печатные этикетки.",
   "set.currency.label": "Валюта системы",
@@ -1086,6 +1113,15 @@ export const ru = {
   "set.opensAt": "Открытие",
   "set.closesAt": "Закрытие",
   "set.hours.backwards": "Время закрытия раньше времени открытия.",
+  "set.accent": "Акцентный цвет",
+  "set.accent.desc":
+    "Цвет, на который опирается интерфейс: кнопки, выделенные строки и первый ряд на графиках.",
+  "set.accent.hint":
+    "Применяется сразу и хранится на этом устройстве — как светлая и тёмная тема.",
+  "accent.blue": "Синий",
+  "accent.violet": "Фиолетовый",
+  "accent.magenta": "Пурпурный",
+  "accent.slate": "Графитовый",
   "set.login": "Логин",
   "set.login.desc": "Логин, под которым вы входите. После смены вход сразу продолжается под новым.",
   "set.login.label": "Логин",
@@ -1108,6 +1144,8 @@ export const ru = {
   "cur.RUB": "Российский рубль",
 
   "err.currentPass": "Это не текущий пароль.",
+  "err.needCurrentPass":
+    "Чтобы задать новый пароль, введите и текущий.",
   "err.samePass": "Новый пароль совпадает с текущим.",
   "err.confirmPass": "Новые пароли не совпадают.",
 
@@ -1261,6 +1299,8 @@ export const az = {
   "activity.title": "Fəaliyyət jurnalı",
   "activity.subtitle": "Bu sessiyada edilən bütün əməliyyatlar",
   "activity.empty": "Hələ fəaliyyət yoxdur.",
+  "activity.new": "Yeni",
+  "activity.markAllRead": "Hamısını oxunmuş kimi işarələ",
   "activity.unread_one": "{count} oxunmamış qeyd",
   "activity.unread_other": "{count} oxunmamış qeyd",
   "activity.viewMore": "Daha çox",
@@ -1543,6 +1583,8 @@ export const az = {
   "lbl.el.logo": "Mağaza loqosu",
   "lbl.el.store": "Mağazanın adı",
   "lbl.el.name": "Məhsulun adı",
+  "lbl.el.color": "Rəng",
+  "lbl.el.size": "Ölçü",
   "lbl.el.barcode": "Barkod",
   "lbl.el.code": "Barkod nömrəsi",
   "lbl.el.price": "Qiymət",
@@ -1580,6 +1622,7 @@ export const az = {
   "lbl.saved": "Yadda saxlanıldı — «Anbar»dan çap olunan etiketlər bu dizaynla çıxır.",
   "lbl.unsaved": "Yadda saxlanılmamış dəyişikliklər",
   "lbl.sample": "Nümunə məhsul",
+  "lbl.sampleColor": "Qara",
 
   "dash.section.performance": "Dinamika",
   "dash.section.selling": "Nə satılır",
@@ -1656,6 +1699,9 @@ export const az = {
 
   "set.desc":
     "Valyuta və iş saatları bütün sistemə, daxil olan hər kəsə aiddir. Login və şifrə isə yalnız sizindir.",
+  "set.tabs": "Ayarlar bölmələri",
+  "set.tab.system": "Sistem",
+  "set.tab.account": "Hesab",
   "set.currency": "Valyuta",
   "set.currency.desc": "Bütün qiymətlər, yekunlar və çap olunan etiketlər bu valyutada yazılır.",
   "set.currency.label": "Sistem valyutası",
@@ -1666,6 +1712,15 @@ export const az = {
   "set.opensAt": "Açılış",
   "set.closesAt": "Bağlanış",
   "set.hours.backwards": "Bağlanış vaxtı açılış vaxtından tezdir.",
+  "set.accent": "Vurğu rəngi",
+  "set.accent.desc":
+    "İnterfeysin söykəndiyi rəng: düymələr, seçilmiş sətirlər və qrafiklərdə birinci sıra.",
+  "set.accent.hint":
+    "Dərhal tətbiq olunur və bu cihazda saxlanılır — işıqlı və qaranlıq tema kimi.",
+  "accent.blue": "Mavi",
+  "accent.violet": "Bənövşəyi",
+  "accent.magenta": "Macenta",
+  "accent.slate": "Grafit",
   "set.login": "Login",
   "set.login.desc": "Daxil olduğunuz login. Dəyişdikdən sonra dərhal yenisi ilə davam edirsiniz.",
   "set.login.label": "Login",
@@ -1688,6 +1743,8 @@ export const az = {
   "cur.RUB": "Rusiya rublu",
 
   "err.currentPass": "Bu, cari şifrə deyil.",
+  "err.needCurrentPass":
+    "Yeni şifrə təyin etmək üçün cari şifrəni də yazın.",
   "err.samePass": "Yeni şifrə cari şifrə ilə eynidir.",
   "err.confirmPass": "Yeni şifrələr üst-üstə düşmür.",
 

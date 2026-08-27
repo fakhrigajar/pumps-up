@@ -28,8 +28,14 @@ export function LabelTemplateProvider({ children }) {
     };
   }, []);
 
+  // Normalized on the way back as well as on the way out: what the server
+  // answers with is a stored design like any other, and one written by a
+  // build that predates an element would otherwise be handed to the printer
+  // with that element missing entirely.
   const save = useCallback(async (next) => {
-    const clean = await settingsApi.saveLabelTemplate(normalizeTemplate(next));
+    const clean = normalizeTemplate(
+      await settingsApi.saveLabelTemplate(normalizeTemplate(next)),
+    );
     setTemplate(clean);
     return clean;
   }, []);

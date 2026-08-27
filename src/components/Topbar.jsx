@@ -10,6 +10,7 @@ export function Topbar({
   onOpenNav,
   activityLog,
   unreadActivity,
+  activityReadThrough,
   onActivityRead,
   onViewActivity,
 }) {
@@ -34,7 +35,8 @@ export function Topbar({
         <ActivityBell
           entries={activityLog}
           unread={unreadActivity}
-          onRead={onActivityRead}
+          readThrough={activityReadThrough}
+          onMarkAllRead={onActivityRead}
           onViewMore={onViewActivity}
         />
         <LanguageMenu />

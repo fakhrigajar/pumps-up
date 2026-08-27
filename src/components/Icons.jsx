@@ -234,6 +234,13 @@ export const IconAlert = (p) => (
   </Icon>
 )
 
+export const IconPalette = (p) => (
+  <Icon {...p}>
+    <path d="M12 3.5a8.5 8.5 0 0 0 0 17h1.7a1.9 1.9 0 0 0 1.4-3.2 1.9 1.9 0 0 1 1.4-3.2h1.4a2.6 2.6 0 0 0 2.6-2.6A8.5 8.5 0 0 0 12 3.5Z" />
+    <path d="M7.7 12.4v.2M9.6 8.6v.2M13.6 7.6v.2M17 10.4v.2" />
+  </Icon>
+)
+
 export const IconGlobe = (p) => (
   <Icon {...p}>
     <circle cx="12" cy="12" r="8.5" />

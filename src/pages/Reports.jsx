@@ -26,6 +26,7 @@ export function Reports() {
   const { data } = useAsync(
     () => reportsApi.ledger(selection.start, selection.end, grouping),
     [selection.start, selection.end, grouping],
+    "reports.ledger",
   );
 
   const heatmap = data?.heatmap ?? { hours: [], rows: [] };

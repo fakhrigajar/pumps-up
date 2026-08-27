@@ -50,7 +50,11 @@ export function Dashboard({ products, activityLog }) {
   // Every number below used to be a useMemo over the full in-memory ledger;
   // now it is one request to the endpoint that runs the same math server-side
   // over whatever MongoDB has, refetched whenever the period picker changes.
-  const { data, loading } = useAsync(() => reportsApi.dashboard(monthsBack), [monthsBack]);
+  const { data, loading } = useAsync(
+    () => reportsApi.dashboard(monthsBack),
+    [monthsBack],
+    "reports.dashboard",
+  );
 
   if (loading || !data) {
     return (

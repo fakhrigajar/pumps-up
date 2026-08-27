@@ -1,6 +1,7 @@
 import { Barcode } from "../ui/Barcode";
 import { Logo } from "../Logo";
 import { barcodeValue } from "../../lib/barcode";
+import { baseName } from "../../data/erp";
 import { currencyCode, formatAmount } from "../../lib/format";
 import {
   boxStyle,
@@ -106,7 +107,13 @@ function textStyle(id, element) {
 
 function textOf(id, product, template, code) {
   if (id === "store") return template.storeName;
-  if (id === "name") return product.name;
+  // The three pieces of a listing, printed apart. A product with no variant
+  // to its name — a Bag — leaves the last two empty rather than printing a
+  // placeholder: a label is read at arm's length, and a dash there would be
+  // one more thing on it to work out.
+  if (id === "name") return baseName(product);
+  if (id === "color") return product.color ?? "";
+  if (id === "size") return product.size == null ? "" : String(product.size);
   if (id === "code") return code;
   return `${formatAmount(product.sellingPrice)} ${currencyCode()}`;
 }

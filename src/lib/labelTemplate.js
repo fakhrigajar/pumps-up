@@ -31,6 +31,8 @@ export const LABEL_ELEMENTS = [
   { id: "logo", kind: "logo", labelKey: "lbl.el.logo" },
   { id: "store", kind: "text", labelKey: "lbl.el.store" },
   { id: "name", kind: "text", labelKey: "lbl.el.name" },
+  { id: "color", kind: "text", labelKey: "lbl.el.color" },
+  { id: "size", kind: "text", labelKey: "lbl.el.size" },
   { id: "barcode", kind: "barcode", labelKey: "lbl.el.barcode" },
   { id: "code", kind: "text", labelKey: "lbl.el.code" },
   { id: "price", kind: "text", labelKey: "lbl.el.price" },
@@ -59,8 +61,15 @@ export const MIN_ELEMENT_H = 3;
 export const STORE_NAME_MAX = 48;
 
 /**
- * The design the shop prints today, and what Reset goes back to: the stack
- * that shipped before the label was designable, expressed in the model above.
+ * The design the shop prints today, and what Reset goes back to.
+ *
+ * The variant is stacked rather than run together: the model name, then the
+ * color, then the size, each on its own line under the one before it. A
+ * shoe's stored name carries all three ("Nike Air Blue 41"), so the name
+ * element prints what is left of it once the other two have their own lines
+ * — see `baseName`. A Bag has neither, and its two lines simply come out
+ * empty, which is why they are laid out tight enough to leave the gap
+ * unremarkable rather than a hole in the label.
  */
 export const DEFAULT_TEMPLATE = {
   version: TEMPLATE_VERSION,
@@ -87,7 +96,7 @@ export const DEFAULT_TEMPLATE = {
       x: 0,
       y: 0,
       w: 100,
-      h: 12,
+      h: 11,
       fontSize: 8,
       fontWeight: 700,
       align: "center",
@@ -96,11 +105,33 @@ export const DEFAULT_TEMPLATE = {
     name: {
       visible: true,
       x: 0,
-      y: 14,
+      y: 12,
       w: 100,
-      h: 26,
+      h: 15,
       fontSize: 10,
       fontWeight: 700,
+      align: "center",
+      lineHeight: 1.2,
+    },
+    color: {
+      visible: true,
+      x: 0,
+      y: 27.5,
+      w: 100,
+      h: 7.5,
+      fontSize: 7.5,
+      fontWeight: 500,
+      align: "center",
+      lineHeight: 1.2,
+    },
+    size: {
+      visible: true,
+      x: 0,
+      y: 35,
+      w: 100,
+      h: 7.5,
+      fontSize: 7.5,
+      fontWeight: 500,
       align: "center",
       lineHeight: 1.2,
     },
@@ -109,14 +140,14 @@ export const DEFAULT_TEMPLATE = {
       x: 2,
       y: 43,
       w: 96,
-      h: 26,
+      h: 24.5,
     },
     code: {
       visible: true,
       x: 0,
-      y: 70,
+      y: 68,
       w: 100,
-      h: 11,
+      h: 10,
       fontSize: 8,
       fontWeight: 400,
       align: "center",
@@ -125,9 +156,9 @@ export const DEFAULT_TEMPLATE = {
     price: {
       visible: true,
       x: 0,
-      y: 83,
+      y: 79.5,
       w: 100,
-      h: 17,
+      h: 20.5,
       fontSize: 14,
       fontWeight: 700,
       align: "center",

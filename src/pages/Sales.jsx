@@ -111,7 +111,6 @@ export function Sales({
           filtering={query.trim().length > 0}
           actions={
             <Button
-              variant="warning"
               onClick={() => setReturning(true)}
               disabled={locked}
               title={locked ? t("reg.lockedHint") : undefined}

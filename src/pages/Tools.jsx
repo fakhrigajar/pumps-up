@@ -21,10 +21,13 @@ const TOOLS = [
 ];
 
 /** Something to draw the label with when the catalogue is empty, so the
- * designer always has a product to lay out. */
+ * designer always has a product to lay out — variant included, so the color
+ * and size lines are laid out against text rather than against two empty
+ * boxes. */
 const SAMPLE_PRODUCT = {
   sku: "PUSAMPLE0001",
   name: "Sample product",
+  size: 41,
   sellingPrice: 129,
 };
 
@@ -32,7 +35,11 @@ export function Tools({ products }) {
   const { t } = useTranslation();
   const [openTool, setOpenTool] = useState(null);
 
-  const product = products[0] ?? { ...SAMPLE_PRODUCT, name: t("lbl.sample") };
+  const product = products[0] ?? {
+    ...SAMPLE_PRODUCT,
+    name: t("lbl.sample"),
+    color: t("lbl.sampleColor"),
+  };
 
   if (openTool === "labelDesigner") {
     return (
