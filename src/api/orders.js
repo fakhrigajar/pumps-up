@@ -1,13 +1,6 @@
 import { api } from "./client";
 import { normalizeEntries } from "./activity";
 
-// The server sends `openedAt`/`closedAt`/order `at` as JSON date strings
-// (Mongoose serializes its `Date` fields that way); every consumer here
-// does epoch-ms arithmetic or hands them straight to `formatClockTime`,
-// which throws on a string (`Intl.DateTimeFormat` only accepts a number or
-// a `Date`). Normalized to numbers once, at the boundary — `closedAt` stays
-// `null` rather than becoming epoch 0, since `session.closedAt === null`
-// is how the UI tells an open shift from a closed one.
 function normalizeSession(session) {
   if (!session) return session;
   return {
@@ -19,9 +12,6 @@ function normalizeSession(session) {
 }
 
 export const orders = {
-  // A checkout answers with three things at once — the restocked products,
-  // the cashier's now-updated session, and the "sold" entries it logged —
-  // and both of the latter two carry dates the app does arithmetic on.
   create: (payment, lines) =>
     api.post("/orders", { payment, lines }).then((data) => ({
       ...data,

@@ -5,24 +5,10 @@ import { axisGutter, barPath, labelStride } from "./shapes";
 import { CHROME, MARK } from "./tokens";
 import { Tooltip } from "./Tooltip";
 
-/**
- * Categories along the bottom, magnitude up the side — hours of the day,
- * days of the week, months of the year.
- *
- * A second series stands beside the first rather than on top of it: stacking
- * would make the total readable and the parts not, and the question these
- * charts are asked is how the two compare, not what they add up to.
- *
- * The hover target is the whole column slot rather than the bar itself, so a
- * quiet hour is as easy to inspect as a busy one — the mark for an hour that
- * took nothing is a few pixels tall, and nobody can point at it.
- */
-
 const PLOT_HEIGHT = 176;
 const AXIS_BAND = 22;
 const PAD = { top: 10 };
 
-/** Share of each slot left as breathing room between one column and the next. */
 const SLOT_GAP = 0.3;
 
 export function Columns({

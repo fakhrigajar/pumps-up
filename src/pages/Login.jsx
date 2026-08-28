@@ -10,17 +10,6 @@ import { usePending } from "../lib/usePending";
 const fieldClass =
   "mt-1 h-10 w-full rounded-lg border border-line bg-surface-2 px-3 text-[14px] text-ink-1 placeholder:text-ink-3 focus:bg-surface-1";
 
-/**
- * The way in, for both roles.
- *
- * It is the whole window rather than a dialog over the app: there is nothing
- * behind it to look at yet, and a shop screen left on the sign-in page all
- * morning should read as closed rather than as an app with a box on top.
- *
- * The failure message names neither the login nor the password as the wrong
- * one, so a wrong guess tells the person guessing nothing about which half
- * they got right.
- */
 export function Login({ onSignIn }) {
   const { t } = useTranslation();
   const [login, setLogin] = useState("");

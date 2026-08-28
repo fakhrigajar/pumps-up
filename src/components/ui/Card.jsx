@@ -1,12 +1,3 @@
-/**
- * `relative` is load-bearing, not decoration: a card that scrolls its contents
- * only clips what it is the containing block for. An absolutely positioned
- * descendant of a static card — every `sr-only` label is one, since that
- * utility is `position: absolute` — resolves against the page instead, escapes
- * the card, and stakes out its share of the document from wherever it happens
- * to sit in the scrolled content. The window then scrolls to reach a label
- * that is one pixel wide and clipped to nothing.
- */
 export function Card({ className = '', children, ...rest }) {
   return (
     <section

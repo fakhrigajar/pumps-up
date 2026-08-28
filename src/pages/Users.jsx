@@ -20,9 +20,6 @@ export function Users({ users, onAdd, onDelete }) {
   const selected = users.find((user) => user.login === selectedLogin) ?? null;
   const lastAdmin = Boolean(selected) && isLastAdmin(users, selected);
 
-  // Why the button is off, in the order the user needs to hear it: pick
-  // somebody first, and if that somebody is the only admin left, the account
-  // that keeps this screen reachable cannot be the one deleted.
   const deleteHint = !selected
     ? t("usr.selectFirst")
     : lastAdmin

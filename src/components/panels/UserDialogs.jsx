@@ -62,10 +62,6 @@ export function UserFormDialog({ users, onCancel, onSubmit }) {
   async function handleSubmit(event) {
     event.preventDefault();
 
-    // The login is validated in the shape it will actually be stored in —
-    // folded to lowercase — so typing "Aysel" is accepted and saved as
-    // "aysel" rather than rejected for a capital letter the user can't see
-    // the problem with.
     const login = normalizeLogin(form.login);
 
     if (!login) return setError(t("err.login"));

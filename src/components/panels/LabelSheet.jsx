@@ -3,17 +3,8 @@ import { createPortal } from "react-dom";
 import { Label } from "./Label";
 import { DEFAULT_TEMPLATE } from "../../lib/labelTemplate";
 
-/** Marks the document while labels are mounted, so a plain Ctrl+P with nothing
- * to print still prints the page rather than an empty sheet. */
 const PRINTING_CLASS = "printing-labels";
 
-/**
- * The labels themselves, rendered into `#print-root` — a container outside the
- * React root, hidden on screen and the only thing `@media print` shows. The
- * app's own shell is a fixed-height scrolling layout with nothing sensible to
- * say about paper, so printing swaps it out entirely rather than trying to
- * restyle it. See the print block in index.css.
- */
 export function LabelSheet({ jobs, template = DEFAULT_TEMPLATE }) {
   const active = Boolean(jobs && jobs.length > 0);
 
@@ -28,15 +19,6 @@ export function LabelSheet({ jobs, template = DEFAULT_TEMPLATE }) {
 
   return createPortal(
     <>
-      {/*
-        One label per page, at exactly the size asked for. `@page` cannot read
-        a custom property, so the rule is written out here from the same two
-        numbers that size the label itself — which is what makes the sheet come
-        out of a label printer as whole labels rather than as a grid to cut up.
-        The numbers are the physical stock, never swapped: turning the design
-        is `rotate`'s job, because the paper in the printer cannot turn.
-        The style element is inert on screen: @page only applies to print.
-      */}
       <style>{`@page { size: ${template.width}mm ${template.height}mm; margin: 0; }`}</style>
 
       <div className="label-sheet">

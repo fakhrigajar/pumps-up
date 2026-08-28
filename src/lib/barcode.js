@@ -11,7 +11,6 @@ const L = [
   "0001011",
 ];
 
-/** Left-hand digits, even parity — the right-hand code, reversed. */
 const G = [
   "0100111",
   "0110011",
@@ -25,8 +24,6 @@ const G = [
   "0010111",
 ];
 
-/** Right-hand digits: the left-hand code inverted, so they start with a bar
- * and a scanner can tell which half of the symbol it is reading. */
 const R = [
   "1110010",
   "1100110",
@@ -40,8 +37,6 @@ const R = [
   "1110100",
 ];
 
-/** Which of the left six digits are set in G rather than L. The leading digit
- * is never drawn — this is the whole of how it is carried. */
 const PARITY = [
   "LLLLLL",
   "LLGLGG",
@@ -58,24 +53,11 @@ const PARITY = [
 const EDGE_GUARD = "101";
 const CENTRE_GUARD = "01010";
 
-/**
- * Clear paper either side of the symbol, in modules, as the spec asks for it.
- * Carried inside the viewBox rather than left to the caller's padding: the
- * quiet zone is part of what a scanner reads, and a symbol laid flush to the
- * edge of its box is one a till will refuse at the worst moment.
- */
 const QUIET_LEFT = 11;
 const QUIET_RIGHT = 7;
 
 export const BARCODE_LENGTH = 13;
 
-/**
- * The thirteenth digit of an EAN-13, given the twelve that precede it.
- *
- * Weights alternate 1 and 3 from the left, and the check digit is whatever
- * rounds that total up to the next multiple of ten — so a single wrong digit,
- * or two adjacent ones swapped, cannot leave the sum where it was.
- */
 export function checkDigit(digits) {
   let sum = 0;
   for (let index = 0; index < digits.length; index += 1) {
@@ -84,15 +66,6 @@ export function checkDigit(digits) {
   return (10 - (sum % 10)) % 10;
 }
 
-/**
- * The black bars of `value`, as `{ x, width }` in modules, plus the total
- * width so a caller can build a viewBox. Spaces are the gaps left between
- * them.
- *
- * Returns `null` for anything that is not a well-formed EAN-13, the failed
- * check digit included, so a caller renders nothing rather than a symbol that
- * scans as the wrong product — or that a scanner throws away in silence.
- */
 export function ean13Bars(value) {
   const text = String(value);
   if (!/^\d{13}$/.test(text)) return null;
@@ -111,9 +84,6 @@ export function ean13Bars(value) {
   }
   modules += EDGE_GUARD;
 
-  // Adjacent set modules are one bar, not several touching ones: a run of
-  // three is a bar three modules wide, which is what the printer should lay
-  // down and what the scanner will measure.
   const bars = [];
   let run = 0;
   for (let index = 0; index <= modules.length; index += 1) {
@@ -128,7 +98,6 @@ export function ean13Bars(value) {
   return { bars, units: QUIET_LEFT + modules.length + QUIET_RIGHT };
 }
 
-/** FNV-1a, seeded, over `text`. */
 function fnv1a(text, seed) {
   let hash = seed;
   for (let index = 0; index < text.length; index += 1) {
@@ -138,15 +107,8 @@ function fnv1a(text, seed) {
   return hash >>> 0;
 }
 
-/**
- * GS1 reserves 20–29 for codes a shop assigns itself, which is exactly what
- * these are. Starting there is what keeps a shelf label off the number of
- * some real product on the same counter.
- */
 const PREFIX = "2";
 
-/** The digits the hash gets to choose: everything but the prefix and the
- * check digit it implies. */
 const SPREAD = BARCODE_LENGTH - PREFIX.length - 1;
 
 const values = new Map();

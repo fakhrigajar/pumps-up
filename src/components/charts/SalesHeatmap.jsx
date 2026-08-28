@@ -3,17 +3,6 @@ import { useMeasure } from "../../lib/useMeasure";
 import { Tooltip } from "./Tooltip";
 import { MARK } from "./tokens";
 
-/**
- * When the counter is busy: one row per day, one cell per hour of the trading
- * day, ink for takings.
- *
- * Magnitude is the whole job, so the scale is one hue from light to dark —
- * five steps of the app's own blue, the same ramp the ordinal charts draw
- * from. An hour with nothing in it is left at the surface colour rather than
- * given the lightest blue, so "closed" and "open but quiet" are not the same
- * mark, and the shape of a working day reads off the grid without a legend.
- */
-
 const STEPS = [
   "var(--ordinal-1)",
   "var(--ordinal-2)",
@@ -29,16 +18,11 @@ const ROW_GAP = MARK.surfaceGap;
 const LABEL_WIDTH = 92;
 const AXIS_HEIGHT = 18;
 
-/** Cells are read as a block, so the tick marks thin out rather than every
- * hour carrying a number that collides with its neighbour. */
 const HOUR_LABEL_STEP = 3;
 
 export function SalesHeatmap({ rows, hours, formatValue, ariaLabel, maxHeight }) {
   const [ref, width] = useMeasure();
   const [active, setActive] = useState(null);
-  // A month of days is taller than the card, so the rows scroll — and the hour
-  // axis stays behind, outside the scrolling box. An axis that scrolled away
-  // with its own grid would leave the reader looking at unlabelled columns.
   const [scrolled, setScrolled] = useState(0);
 
   const peak = rows.reduce(
@@ -50,9 +34,6 @@ export function SalesHeatmap({ rows, hours, formatValue, ariaLabel, maxHeight })
   const cellWidth = gridWidth / Math.max(hours.length, 1);
   const height = rows.length * ROW_HEIGHT;
 
-  // Five bands over the range, so the darkest step means "the busiest hour on
-  // screen" — the scale is of what is in view, not of an absolute the reader
-  // cannot see.
   const stepOf = (value) => {
     if (value <= 0) return -1;
     const share = peak > 0 ? value / peak : 0;
@@ -152,7 +133,6 @@ export function SalesHeatmap({ rows, hours, formatValue, ariaLabel, maxHeight })
   );
 }
 
-/** The scale, spelled out: a sequential ramp has to say what dark means. */
 export function HeatmapLegend({ lowLabel, highLabel }) {
   return (
     <div className="flex items-center gap-2">

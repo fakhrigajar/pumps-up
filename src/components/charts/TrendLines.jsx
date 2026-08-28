@@ -5,25 +5,10 @@ import { areaPath, axisGutter, labelStride, linePath } from "./shapes";
 import { CHROME, MARK } from "./tokens";
 import { Tooltip } from "./Tooltip";
 
-/**
- * One or more measures over the same days, on one axis.
- *
- * They share an axis because they share a unit — money against money is a
- * comparison the eye can make, and the gap between the two lines is itself
- * the thing being read. A second y-scale would let that gap say whatever the
- * scales were chosen to make it say.
- *
- * `rows[].values` is parallel to `series`, so a row never has to know what the
- * chart is called; it carries numbers in a fixed order and the series say what
- * they mean.
- */
-
 const PLOT_HEIGHT = 218;
 const AXIS_BAND = 24;
 const PAD = { top: 10, bottom: 8 };
 
-/** Two end labels sitting on top of each other are worse than none, so they
- * are pushed apart when the lines finish close together. */
 const LABEL_SPACING = 15;
 
 export function TrendLines({ rows, series, formatTooltip, ariaLabel }) {
@@ -69,7 +54,6 @@ export function TrendLines({ rows, series, formatTooltip, ariaLabel }) {
 
   const labelSlots = useMemo(
     () => spreadLabels(lines.map((line) => line.points[line.points.length - 1]?.y ?? 0)),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [rows, width, scale.max, series.length],
   );
 
@@ -132,8 +116,6 @@ export function TrendLines({ rows, series, formatTooltip, ariaLabel }) {
             </g>
           ))}
 
-          {/* The lead series gets the fill: two washes over each other would
-              muddy both, and the second line reads as a line against it. */}
           {lines[0] ? (
             <path
               d={areaPath(lines[0].points, baseline)}
@@ -238,7 +220,6 @@ export function TrendLines({ rows, series, formatTooltip, ariaLabel }) {
   );
 }
 
-/** Keep end labels at least `LABEL_SPACING` apart, holding their order. */
 function spreadLabels(positions) {
   const order = positions
     .map((y, index) => ({ y, index }))

@@ -2,11 +2,6 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { ToastContext } from "./context";
 import { ToastStack } from "../components/ui/ToastStack";
 
-/**
- * Past this the oldest are dropped rather than queued. Someone dragging a bad
- * label across the scanner produces one of these a second, and a column of
- * fifteen identical warnings says nothing the top one did not.
- */
 const MAX_VISIBLE = 3;
 
 export function ToastProvider({ children }) {

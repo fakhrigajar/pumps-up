@@ -15,8 +15,6 @@ export function errorBeep() {
     oscillator.type = "square";
     oscillator.frequency.setValueAtTime(220, now);
 
-    // Ramped rather than switched on and off: a gain that jumps to or from
-    // zero is a click, which is a worse noise than the beep itself.
     gain.gain.setValueAtTime(0.0001, now);
     gain.gain.exponentialRampToValueAtTime(0.12, now + 0.01);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
@@ -25,6 +23,5 @@ export function errorBeep() {
     oscillator.start(now);
     oscillator.stop(now + 0.2);
   } catch {
-    // A till that cannot make a noise is still a till.
   }
 }

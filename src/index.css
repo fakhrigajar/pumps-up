@@ -2,62 +2,41 @@
 @tailwind components;
 @tailwind utilities;
 
-/* --------------------------------------------------------------------------
-   Design tokens.
-
-   Light is defined on bare :root so every color has a value before any theme
-   class lands, and is the default. The dark set is redefined under .dark,
-   which ThemeProvider stamps on <html> when the dark theme is selected.
-   -------------------------------------------------------------------------- */
-
 :root {
   color-scheme: light;
 
-  /* Surfaces */
   --plane: #f9f9f7;
   --surface-1: #fcfcfb;
   --surface-2: #f2f1ed;
   --surface-3: #e9e8e2;
 
-  /* Ink */
   --ink-1: #0b0b0b;
   --ink-2: #52514e;
   --ink-3: #898781;
 
-  /* Chrome */
   --line: #e1e0d9;
   --axis: #c3c2b7;
   --ring: rgba(11, 11, 11, 0.1);
 
-  /* Categorical series (validated: adjacent + all-pairs, light surface) */
   --series-1: #2a78d6;
   --series-2: #eb6834;
   --series-3: #1baf7a;
 
-  /* Series 1 washed into the surface, for a fill that sits behind full-strength
-     ink (the calendar's selected range). A real token rather than an alpha
-     modifier: these colors are var() strings, which Tailwind 3 cannot apply an
-     opacity modifier to, and fading the element itself would fade its text. */
   --accent-soft: #dae7f5;
 
-  /* Ordinal ramp, single hue, light -> dark */
   --ordinal-1: #86b6ef;
   --ordinal-2: #5598e7;
   --ordinal-3: #2a78d6;
   --ordinal-4: #1c5cab;
   --ordinal-5: #104281;
 
-  /* Status (fixed, never themed) */
   --status-good: #0ca30c;
   --status-warning: #fab219;
   --status-serious: #ec835a;
   --status-critical: #d03b3b;
 
-  /* Ink that clears contrast on a full-strength status fill. The status hues
-     are fixed, so what sits on them is fixed with them. */
   --on-status: #1b1400;
 
-  /* Delta text: success needs to clear text contrast on the light surface */
   --delta-up: #006300;
   --delta-down: #b5302f;
 }
@@ -78,7 +57,6 @@
   --axis: #383835;
   --ring: rgba(255, 255, 255, 0.1);
 
-  /* Same eight hues, stepped for the dark surface */
   --series-1: #3987e5;
   --series-2: #d95926;
   --series-3: #199e70;
@@ -95,9 +73,6 @@
   --delta-down: #e66767;
 }
 
-/* The window is the frame, not the page: the shell is exactly a screen tall
-   and never scrolls. What scrolls is the list inside it, under a heading and a
-   column of headers that stay put. */
 html,
 body,
 #root {
@@ -109,15 +84,6 @@ body {
   color: var(--ink-1);
   -webkit-font-smoothing: antialiased;
 }
-
-/* --------------------------------------------------------------------------
-   Motion.
-
-   The spinner and the toast's progress bar are both readouts rather than
-   decoration — one says a request is still open, the other is the dismissal
-   timer made visible — so reduced motion trims the toast's entrance and
-   leaves the two that carry meaning running.
-   -------------------------------------------------------------------------- */
 
 @keyframes spin {
   to {
@@ -165,15 +131,6 @@ body {
   }
 }
 
-/* Theme swap should not animate every chart mark on every repaint, so the
-   transition is scoped to the surfaces that actually change.
-
-   It sits in `base` on purpose. As a plain rule it landed after Tailwind's
-   utilities and, matching on the same specificity, quietly beat every one of
-   them: a component asking for `transition-[height]` got this colour fade
-   instead and its animation simply did not happen. In the base layer the
-   default still reaches everything that asks for nothing, and a component
-   that names its own transition gets the one it asked for. */
 @layer base {
   .theme-transition,
   .theme-transition * {
@@ -184,9 +141,6 @@ body {
   }
 }
 
-/* Deliberately *not* in a layer: this one has to outrank the utilities too,
-   or a component's own transition would animate for somebody who asked the
-   whole system to stop moving. */
 @media (prefers-reduced-motion: reduce) {
   .theme-transition,
   .theme-transition * {
@@ -194,8 +148,6 @@ body {
   }
 }
 
-/* No native spinners on number inputs — quantity fields carry their own
-   stepper buttons, and the browser arrows are too small to hit reliably. */
 input[type='number']::-webkit-outer-spin-button,
 input[type='number']::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -207,39 +159,11 @@ input[type='number'] {
   appearance: textfield;
 }
 
-/* Focus ring that reads on both surfaces */
 :focus-visible {
   outline: 2px solid var(--series-1);
   outline-offset: 2px;
   border-radius: 4px;
 }
-
-/* --------------------------------------------------------------------------
-   Barcode labels.
-
-   The sheet lives in #print-root, outside the app root, so printing can hide
-   the whole application and show the labels alone — the app shell is a
-   fixed-height, scrolling, themed layout, and none of that survives contact
-   with paper.
-
-   A label is a physical object, so it is measured in millimetres, and the two
-   from the saved design arrive as --label-w and --label-h. One label per page:
-   the page is the label (LabelSheet writes the matching @page rule), and every
-   label after the first opens a new one.
-
-   .label is the page — always the physical stock, never swapped. .label-face
-   is the design printed on it, and on a rotated label it is the face that
-   turns: --face-w/--face-h swap, and the quarter turn is taken about the top
-   left corner and walked back into place. The face is positioned out of flow
-   there, so its pre-rotation box — taller than the page, on a landscape label
-   — cannot push a blank page out behind it.
-
-   Inside the face, .label-canvas is what the margin leaves, and every element
-   is placed on it as a percentage of that box. Nothing here decides where
-   anything goes: the numbers come from the saved template, so the designer
-   moves an element by changing four percentages and the print sheet reads the
-   same four back.
-   -------------------------------------------------------------------------- */
 
 #print-root {
   display: none;
@@ -286,8 +210,6 @@ input[type='number'] {
   align-items: center;
 }
 
-/* The symbol fills its box in both directions — the bars are drawn with
-   preserveAspectRatio="none", so height is free to be set on its own. */
 .label-el--symbol {
   display: block;
 }
@@ -302,8 +224,6 @@ input[type='number'] {
 .label-text {
   display: block;
   width: 100%;
-  /* A product name long enough to need it breaks mid-word rather than running
-     out past the edge of its box. */
   overflow-wrap: anywhere;
   font-variant-numeric: tabular-nums;
 }
@@ -321,26 +241,11 @@ input[type='number'] {
   page-break-before: always;
 }
 
-/* The dialog's preview: the same label, on its own white ground so it reads as
-   a physical label rather than as part of the surrounding surface. */
 .label-preview {
   overflow: hidden;
   background: #fff;
   color: #000;
 }
-
-/* --------------------------------------------------------------------------
-   Label designer.
-
-   The drag surface is a second, empty copy of the label — same classes, same
-   custom properties, same rotation — laid exactly over the printed one and
-   scaled with it. Nothing about a box's position is computed twice: a handle
-   sits on the element because both are placed by the same percentages, so
-   what is dragged and what prints cannot drift apart.
-
-   Overflow is let out of the copy alone, so a handle on an edge is a whole
-   handle rather than half of one clipped by the label's own edge.
-   -------------------------------------------------------------------------- */
 
 .designer-overlay {
   position: absolute;
@@ -360,7 +265,6 @@ input[type='number'] {
   border: 1px dashed rgba(42, 120, 214, 0.55);
   background: transparent;
   cursor: move;
-  /* A drag on a touch screen is a drag, not a scroll of the page under it. */
   touch-action: none;
 }
 
@@ -385,10 +289,6 @@ input[type='number'] {
   touch-action: none;
 }
 
-/* Only a live print job swaps the app out for the labels. Without the class,
-   Ctrl+P anywhere in the app would print a blank sheet — #print-root is empty
-   whenever nothing is being printed. LabelSheet sets it while it is mounted,
-   and the @page rule comes from there too. */
 @media print {
   html,
   body {
@@ -408,7 +308,6 @@ input[type='number'] {
   }
 }
 
-/* Scrollbars */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--surface-3) transparent;

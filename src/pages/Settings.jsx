@@ -32,16 +32,6 @@ import { usePending } from "../lib/usePending";
 
 const PREVIEW_AMOUNT = 1234.5;
 
-/**
- * The two halves of this screen: what the shop is set to, and what this
- * account is. They are separated because they answer to different people —
- * the shop's currency is the same for everyone signed in, while a login and
- * a password are one reader's own.
- *
- * Each tab is one form under one button, at the foot of the tab: everything
- * above the button belongs to it, which is the only arrangement that reads
- * unambiguously once a tab holds more than a single section.
- */
 const TABS = [
   { id: "system", labelKey: "set.tab.system" },
   { id: "account", labelKey: "set.tab.account" },
@@ -50,7 +40,6 @@ const TABS = [
 const inputClass =
   "mt-1 h-9 w-full rounded-lg border border-line bg-surface-2 px-3 text-[13px] text-ink-1 placeholder:text-ink-3 focus:bg-surface-1";
 
-/** What the shop half shows when nothing has been typed into it. */
 function storeBaseline(settings) {
   return {
     currency: settings.currency,
@@ -59,7 +48,6 @@ function storeBaseline(settings) {
   };
 }
 
-/** Everything about a login that can be judged without asking the server. */
 function loginProblem(login, users, current, t) {
   if (!login) return t("err.login");
   if (login.length < LOGIN_MIN_LENGTH || login.length > LOGIN_MAX_LENGTH) {
@@ -69,8 +57,6 @@ function loginProblem(login, users, current, t) {
     });
   }
   if (!LOGIN_PATTERN.test(login)) return t("err.loginChars");
-  // The account being renamed is not a clash with itself, and every other
-  // login in the list is.
   if (login !== current && findUser(users, login)) {
     return t("err.loginDup", { login });
   }
@@ -82,10 +68,6 @@ export function Settings({ users, onUpdateAccount }) {
   const { user } = useSession();
   const [tab, setTab] = useState(TABS[0].id);
 
-  // Both panels stay mounted and the one not being read is hidden, rather
-  // than switched out: a half-typed closing time is still a draft when its
-  // author steps over to rename themselves, and unmounting would throw it
-  // away behind their back.
   return (
     <div className="mx-auto w-full space-y-4">
       <p className="text-[13px] text-ink-2">{t("set.desc")}</p>
@@ -127,9 +109,6 @@ function Tabs({ value, onChange }) {
             role="tab"
             aria-selected={active}
             aria-controls={`set-panel-${id}`}
-            // Only the selected tab is a tab stop; the arrow keys move
-            // between them from there, which is how a tab strip is expected
-            // to behave once it has focus.
             tabIndex={active ? 0 : -1}
             onClick={() => onChange(id)}
             onKeyDown={(event) => {
@@ -168,16 +147,6 @@ function Panel({ id, active, children }) {
   );
 }
 
-/**
- * The shop itself: what it charges in, when it is open, and the accent the
- * app is drawn in.
- *
- * The accent is inside the form without being part of what the button saves.
- * It has nowhere to be saved to — like the light and dark theme it is kept
- * in this browser and applied on the click — and the note under the swatches
- * is what says so, rather than an eighth section of its own below the button
- * that commits everything above it.
- */
 function SystemForm() {
   const { t } = useTranslation();
   const { settings, update } = useStoreSettings();
@@ -187,10 +156,6 @@ function SystemForm() {
   const [saved, setSaved] = useState(null);
   const [saving, runSave] = usePending();
 
-  // The stored values are the draft's baseline, and they move twice: when the
-  // server's answer replaces the defaults the provider starts from, and after
-  // each save. Re-seeding on both is what keeps the form showing what the shop
-  // is actually set to rather than what it happened to be set to on arrival.
   useEffect(() => {
     setDraft(storeBaseline(settings));
   }, [settings]);
@@ -208,16 +173,14 @@ function SystemForm() {
   };
   const dirty = changed.currency || changed.opensAt || changed.closesAt;
 
-  // Judged on the draft rather than on what is stored, so the warning appears
-  // while the typo is still on screen to be fixed.
   const backwards =
     clockToMinutes(draft.closesAt) <= clockToMinutes(draft.opensAt);
 
   async function handleSave(event) {
     event.preventDefault();
+    if (!dirty) return;
     setSaved(null);
 
-    // Only what moved is sent.
     const store = {};
     if (changed.currency) store.currency = draft.currency;
     if (changed.opensAt) store.opensAt = draft.opensAt;
@@ -258,9 +221,6 @@ function SystemForm() {
             </div>
           </label>
 
-          {/* The preview follows the stored currency, not the draft: it is
-              showing how prices read across the app, and they do not change
-              until this is saved. */}
           <p className="pb-2 text-[12.5px] text-ink-3">
             {t("set.currency.preview")}{" "}
             <span className="font-medium tabular-nums text-ink-1">
@@ -288,9 +248,6 @@ function SystemForm() {
           />
         </div>
 
-        {/* Not an error — a shop that shuts before it opens is a typo, but it
-            is the reader's typo to fix, and refusing to store it would lose
-            whichever of the two they meant to type next. */}
         {backwards ? (
           <p
             role="status"
@@ -309,7 +266,6 @@ function SystemForm() {
   );
 }
 
-/** The accent, picked from a handful of colors and applied on the click. */
 function AccentSection() {
   const { t } = useTranslation();
   const { theme, accent, setAccent } = useTheme();
@@ -328,8 +284,6 @@ function AccentSection() {
         {ACCENTS.map(({ id, labelKey }) => {
           const active = id === accent;
           const name = t(labelKey);
-          // The swatch shows the color as this theme will actually print it:
-          // every accent is a slightly different value on a dark surface.
           const { accent: color } = accentTokens(id, theme);
 
           return (
@@ -363,15 +317,6 @@ function AccentSection() {
   );
 }
 
-/**
- * This account: the name it signs in under and the password behind it, under
- * one button.
- *
- * Either half can be left alone — the button sends whichever of them has been
- * touched, and both go in the one request. PATCH /users/me takes the pair
- * together and writes them in a single save, so a refused rename cannot leave
- * a changed password behind it; there is no half-done state to report.
- */
 function AccountForm({ users, currentLogin, onUpdate }) {
   const { t } = useTranslation();
   const blank = { current: "", next: "", confirm: "" };
@@ -397,27 +342,21 @@ function AccountForm({ users, currentLogin, onUpdate }) {
 
   const nextLogin = normalizeLogin(login);
   const renaming = nextLogin !== currentLogin;
-  // Any of the three filled in counts as an attempt at a new password, so a
-  // half-finished one is answered rather than quietly ignored.
   const changingPassword =
     password.current !== "" || password.next !== "" || password.confirm !== "";
   const dirty = renaming || changingPassword;
 
   async function handleSave(event) {
     event.preventDefault();
+    if (!dirty) return;
     setSaved(null);
 
-    // Whatever the client can rule out is ruled out before any request goes,
-    // so a rejected login never leaves the password changed and the name not.
     if (renaming) {
       const problem = loginProblem(nextLogin, users, currentLogin, t);
       if (problem) return setError(problem);
     }
 
     if (changingPassword) {
-      // The current password can only be checked by the server — this
-      // account's real password never reaches the client — so what stays
-      // here is the cheap, still-legitimate pre-checks that don't need it.
       if (password.current === "") return setError(t("err.needCurrentPass"));
       if (password.next.length < PASSWORD_MIN_LENGTH) {
         return setError(t("err.password", { min: PASSWORD_MIN_LENGTH }));
@@ -428,10 +367,6 @@ function AccountForm({ users, currentLogin, onUpdate }) {
       }
     }
 
-    // Only what moved is sent. The current password rides along with the new
-    // one: it is asked for even though the account is already signed in,
-    // because a screen left unlocked is the ordinary case in a shop, and it
-    // is the one thing standing between a passer-by and the back office.
     const changes = {};
     if (renaming) changes.login = nextLogin;
     if (changingPassword) {
@@ -447,8 +382,6 @@ function AccountForm({ users, currentLogin, onUpdate }) {
 
     if (changingPassword) setPassword(blank);
     setError(null);
-    // A rename is worth saying out loud rather than confirming generically:
-    // it is also the name the reader signs in under next time.
     return setSaved(
       [
         renaming ? t("set.login.saved", { login: nextLogin }) : null,
@@ -562,11 +495,6 @@ function AccountForm({ users, currentLogin, onUpdate }) {
   );
 }
 
-/**
- * The one button a tab answers to. It sits at the foot of the tab and on the
- * right, where the last thing read on a page of fields is the thing that
- * commits them, and it has nothing to do until something has actually moved.
- */
 function SaveRow({ error, saved, disabled, saving }) {
   const { t } = useTranslation();
 
@@ -605,11 +533,6 @@ function Section({ Icon, title, description, children }) {
   );
 }
 
-/**
- * A wall clock, in the browser's own time control. It is the one native input
- * kept in the app: a time is typed digit by digit and stepped with the arrow
- * keys, and no drawn-from-scratch pair of dropdowns does either as well.
- */
 function TimeField({ label, value, onChange }) {
   return (
     <label className="block">
@@ -617,8 +540,6 @@ function TimeField({ label, value, onChange }) {
       <input
         type="time"
         value={value}
-        // An empty or half-typed time is not a time; the field keeps showing
-        // it while the shop keeps the last one it was actually set to.
         onChange={(event) => {
           if (clockToMinutes(event.target.value) !== null) {
             onChange(event.target.value);
@@ -630,12 +551,6 @@ function TimeField({ label, value, onChange }) {
   );
 }
 
-/**
- * What a form has to say back, in the one place a reader looks for it. The
- * margin is a prop because it is read in two positions: stacked under the
- * fields, and inline beside the save button, where a top margin would knock
- * it out of line with the button it sits next to.
- */
 function Status({ error, saved, className = "mt-2.5" }) {
   if (!error && !saved) return null;
 

@@ -2,14 +2,6 @@ import { Card, CardHeader } from "../ui/Card";
 import { formatPrice } from "../../lib/format";
 import { useTranslation } from "../../i18n/context";
 
-/**
- * The other end of the best-seller list: what barely moved, or did not move
- * at all.
- *
- * It is a list rather than a chart because most of these bars would be zero,
- * and a row of empty bars says less than the two numbers that matter — how
- * few sold, and how many are still sitting on the shelf behind it.
- */
 export function SlowMovers({ rows }) {
   const { t } = useTranslation();
 

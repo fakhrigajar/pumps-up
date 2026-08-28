@@ -21,20 +21,6 @@ const PAYMENT_METHODS = [
   },
 ];
 
-/**
- * The basket, along the bottom of the till — and a drawer when the basket
- * outgrows the strip.
- *
- * Collapsed it is a status bar: a couple of lines, the total, and the button
- * that ends the sale. Pulled open by the handle on its top edge it becomes a
- * working surface, tall enough to check a long order line by line and wide
- * enough to lay those lines out in columns rather than one tall list.
- *
- * It grows *over* the product table rather than pushing it up: the page keeps
- * the padding it reserved for the collapsed strip, so nothing behind the
- * drawer moves while it opens and the row somebody was about to tap is still
- * where they left it when it shuts.
- */
 export function SalePanel({
   innerRef,
   height,
@@ -50,8 +36,6 @@ export function SalePanel({
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
 
-  // Escape shuts the drawer before anything else can act on it, the way it
-  // shuts a menu — the drawer is the thing covering the screen.
   useEffect(() => {
     if (!expanded) return undefined;
     const onKey = (event) => {
@@ -76,9 +60,6 @@ export function SalePanel({
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-20 lg:left-[264px]">
-      {/* The handle sits outside the panel's own box so the panel can clip its
-          contents while the height animates, and still show a grip above the
-          edge it is being pulled from. */}
       <button
         type="button"
         onClick={() => setExpanded((open) => !open)}
@@ -94,10 +75,6 @@ export function SalePanel({
         />
       </button>
 
-      {/* `tabIndex={-1}` makes this focusable without putting it in the tab
-          order: it is a place to be sent — a scan lands here — rather than a
-          stop on the way through the page. Sent focus is not keyboard focus,
-          so no ring is drawn for it. */}
       <div
         ref={innerRef}
         tabIndex={-1}

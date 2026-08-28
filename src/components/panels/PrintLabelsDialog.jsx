@@ -19,18 +19,8 @@ const DASH = "—";
 const inRange = (value) =>
   Number.isFinite(value) && value >= LABEL_MIN_MM && value <= LABEL_MAX_MM;
 
-/**
- * `template` is the saved design — what is on a label and where. The dialog
- * does not touch it; the only thing it can change is the stock the design is
- * printed on, because that is a property of the printer that is loaded right
- * now rather than of the design. Everything else is settled in the label
- * designer, so a print run is a matter of quantities.
- */
 export function PrintLabelsDialog({ products, template, onCancel, onPrint }) {
   const { t } = useTranslation();
-  // Stock is the count that is usually wanted — a delivery lands and every
-  // unit of it needs a tag — so it is what the field opens on. Nothing holds
-  // it there: the number is free to go above stock or below it.
   const [quantities, setQuantities] = useState(() =>
     Object.fromEntries(
       products.map((product) => [product.sku, String(product.stock)]),
@@ -57,9 +47,6 @@ export function PrintLabelsDialog({ products, template, onCancel, onPrint }) {
         quantity > MAX_LABELS_PER_PRODUCT),
   );
 
-  // A quantity that is too large still counts toward the total. Zeroing it
-  // would disable the Print button, and a button that goes dead without a word
-  // is worse than one that explains itself when pressed.
   const total = parsed.reduce(
     (sum, line) =>
       sum + (Number.isFinite(line.quantity) ? Math.max(0, line.quantity) : 0),
@@ -105,10 +92,6 @@ export function PrintLabelsDialog({ products, template, onCancel, onPrint }) {
       width="lg"
       onClose={onCancel}
     >
-      {/* noValidate: the quantity and size rules are the dialog's to explain,
-          in the app's own language. Left on, the browser blocks submit on
-          `max` and on a fractional step before handleSubmit ever runs, and
-          answers in whatever language the browser is set to. */}
       <form onSubmit={handleSubmit} noValidate>
         <div className="px-5 py-4">
           <div className="flex flex-wrap items-start gap-4 rounded-lg border border-line bg-surface-2 px-3 py-2.5">
@@ -251,13 +234,6 @@ const PX_PER_MM = 96 / 25.4;
 const PREVIEW_MAX_W = 190;
 const PREVIEW_MAX_H = 150;
 
-/**
- * The label at its real proportions, scaled to fit a corner of the dialog.
- * It is the same `Label` the printer gets, drawn from the saved design with
- * the stock this job is going onto — so a design that comes out turned the
- * wrong way round, or crowded onto smaller stock, can be seen here first,
- * before a roll of it is spent finding out.
- */
 function LabelPreview({ product, template, width, height, rotated }) {
   const { t } = useTranslation();
   if (!product || !inRange(width) || !inRange(height)) return null;

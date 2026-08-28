@@ -108,8 +108,6 @@ export function ProductTable({
                   tabIndex={disabled ? -1 : 0}
                   onClick={activate}
                   onKeyDown={(event) => {
-                    // Space on the row's own checkbox is the checkbox's to
-                    // handle; only the row itself selects.
                     if (event.target !== event.currentTarget) return;
                     if (event.key === "Enter" || event.key === " ") {
                       event.preventDefault();

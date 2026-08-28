@@ -49,20 +49,12 @@ export function setFormatLocale(target, formatOverrides = null) {
   rebuild()
 }
 
-/**
- * The currency every price in the app is written in, set once from the store
- * settings. It lives here rather than being threaded through each call because
- * a price is formatted in some forty places and none of them has an opinion
- * about the currency — the shop does.
- */
 export function setFormatCurrency(code) {
   if (code === currency) return
   currency = code
   rebuild()
 }
 
-/** For the one place that spells the currency out as text rather than
- * formatting an amount in it: the printed label. */
 export function currencyCode() {
   return currency
 }
@@ -95,8 +87,6 @@ export function formatPrice(value) {
   return cache.price.format(value)
 }
 
-/** A price with no currency symbol, for the label that spells the currency
- * code out itself. */
 export function formatAmount(value) {
   return cache.amount.format(value)
 }

@@ -6,24 +6,6 @@ import { useTranslation } from '../../i18n/context'
 
 const LIMIT = 8
 
-/**
- * The session's actions, newest first.
- *
- * `limit` is what separates the two panels this is: a dashboard card shows a
- * recent handful and stops, while the bell's panel is given `null` and holds
- * the lot — a panel that scrolls has no reason to hide rows behind an edge
- * the reader cannot see. `onViewMore` is offered only where the activity page
- * behind it can actually be opened, so the caller decides, not this.
- *
- * `newSince` is a read watermark: entries logged after it are marked new.
- * Left out — as the dashboard card leaves it — nothing is marked, since a
- * card sitting on a screen the reader is already looking at has no unread.
- *
- * `onMarkAllRead` moves that watermark, and is offered on the same terms as
- * `onViewMore`: given a handler the footer grows a button, otherwise it does
- * without one. It goes live exactly when a row is marked new, so the button
- * and the marks it clears say the same thing.
- */
 export function ActivityLog({
   entries,
   className = '',
@@ -45,11 +27,6 @@ export function ActivityLog({
         className="shrink-0"
       />
 
-      {/* Only the list scrolls: the header names the panel and the footer
-          leaves it, and neither should slide out from under the reader.
-          `min-h-0` is what lets this shrink inside the flex column rather
-          than pushing the card past the height it was given — without it a
-          flex item floors at its content and the card grows instead. */}
       <div className="min-h-0 flex-1 overflow-y-auto">
         <ol className="mt-2 px-5 pb-4">
           {rows.map((entry, index) => (
@@ -93,9 +70,6 @@ export function ActivityLog({
 
       {onMarkAllRead || onViewMore ? (
         <div className="shrink-0 space-y-2 border-t border-line p-3">
-          {/* Left in place rather than pulled once there is nothing left to
-              mark: the button vanishing from under the pointer it was just
-              clicked with would take "View more" up with it. */}
           {onMarkAllRead ? (
             <Button
               size="sm"

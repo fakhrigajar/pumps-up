@@ -106,8 +106,6 @@ export function Register({ users }) {
               : ""}
           </p>
 
-          {/* The hours every row below is being judged against, said once
-              here rather than implied by the colour of forty cells. */}
           <p className="ml-auto text-[12.5px] tabular-nums text-ink-3">
             {t("reg.storeHours", {
               opens: settings.opensAt,
@@ -182,11 +180,6 @@ export function Register({ users }) {
   );
 }
 
-/**
- * A shift and, when it is opened, what was sold on it. The products live in a
- * second row of the same table rather than in a panel elsewhere, so the list
- * stays under the shift it belongs to when several are opened in turn.
- */
 function SessionRows({
   session,
   totals,
@@ -318,13 +311,6 @@ function SessionRows({
   );
 }
 
-/**
- * A time, and how it compares to the hour the shop keeps.
- *
- * The verdict sits under the clock rather than beside it because it is read
- * down a column: a scan of the Opened column should show the late shifts as
- * a run of red without anybody reading a single word of it.
- */
 function ClockCell({ at, status }) {
   const { t } = useTranslation();
 

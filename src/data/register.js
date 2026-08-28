@@ -1,16 +1,5 @@
 import { minutesFromClock } from "../lib/storeSettings";
 
-/**
- * Register sessions themselves now live in MongoDB (opened/closed and
- * fetched through src/api/orders.js). What is left here are the per-row
- * display helpers a page runs over one already-fetched session at a time —
- * `sessionTotals`, `sessionProducts`, and the opening/closing lateness
- * verdicts — none of which need to run over the whole history the way
- * `selectHeatmap`/`countOrders` did (those moved to
- * server/src/lib/register.js, run once per request over what MongoDB has).
- */
-
-/** Trading hours the demo history was seeded across. */
 export const TRADING_OPEN_HOUR = 9;
 export const TRADING_CLOSE_HOUR = 21;
 
@@ -22,7 +11,6 @@ export function orderUnits(order) {
   return order.lines.reduce((sum, line) => sum + line.qty, 0);
 }
 
-/** What a shift came to: the three numbers a session is read by. */
 export function sessionTotals(session) {
   return session.orders.reduce(
     (totals, order) => ({
@@ -34,9 +22,6 @@ export function sessionTotals(session) {
   );
 }
 
-/** Every product that crossed the counter in a session, folded to one row
- * each and heaviest first — the same product rung up in four orders is one
- * line of four, not four lines. */
 export function sessionProducts(session) {
   const byProduct = new Map();
 
@@ -57,22 +42,8 @@ export function sessionProducts(session) {
   return [...byProduct.values()].sort((a, b) => b.revenue - a.revenue);
 }
 
-/**
- * How far off the hour still counts as being on it. A till is opened by a
- * person with a key, not by a clock, so "09:00" in the settings means the
- * couple of minutes either side of it — without this, "On time" would be a
- * status almost no shift ever earned.
- */
 export const ON_TIME_GRACE_MINUTES = 2;
 
-/**
- * How a shift's opening compares to the hour the shop is meant to open.
- *
- * Early is not a fault: a till open before the doors is the shop ready for
- * them, so only lateness reads as a problem. The two functions are separate
- * rather than one with a flag because they disagree about which direction is
- * the bad one, and that disagreement is the whole point of them.
- */
 export function openingStatus(openedAt, opensAt) {
   const drift = minutesFromClock(openedAt, opensAt);
   if (drift === null) return null;
@@ -85,8 +56,6 @@ export function openingStatus(openedAt, opensAt) {
   return { key: "reg.onTime", tone: "good", drift };
 }
 
-/** The mirror of it at the other end of the day: closing up before the shop
- * was due to shut is the fault, and staying open past it is not. */
 export function closingStatus(closedAt, closesAt) {
   const drift = minutesFromClock(closedAt, closesAt);
   if (drift === null) return null;
@@ -99,22 +68,6 @@ export function closingStatus(closedAt, closesAt) {
   return { key: "reg.onTime", tone: "good", drift };
 }
 
-/**
- * The one value a session is addressed by in the UI: its React key, and the
- * "which shift is open" state on the register page.
- *
- * Sessions used to be seeded here with an `id` of their own; they come from
- * MongoDB now, whose documents carry `_id` instead, so neither field can be
- * relied on to be there. That mattered rather than being a tidiness point:
- * with `session.id` undefined on every row, `session.id === openId` compared
- * undefined against undefined and every shift on the page read as the opened
- * one, so opening one cashier's products opened all of them.
- *
- * The fallback is the shift itself. A cashier can open a till twice in a day
- * — closing ends a shift rather than pausing it — so the opening time is what
- * separates the two, and the three together are unique without needing a key
- * from the server at all.
- */
 export function sessionKey(session) {
   return (
     session.id ??

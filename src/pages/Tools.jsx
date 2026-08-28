@@ -4,13 +4,6 @@ import { IconChevronRight, IconTag } from "../components/Icons";
 import { LabelDesigner } from "../components/panels/LabelDesigner";
 import { useTranslation } from "../i18n/context";
 
-/**
- * The back office's workshop: settings that shape what the operational pages
- * produce, rather than the day's numbers.
- *
- * Each tool opens in place instead of on its own route — the app navigates by
- * page id, and a tool is a screen within this one.
- */
 const TOOLS = [
   {
     id: "labelDesigner",
@@ -20,10 +13,6 @@ const TOOLS = [
   },
 ];
 
-/** Something to draw the label with when the catalogue is empty, so the
- * designer always has a product to lay out — variant included, so the color
- * and size lines are laid out against text rather than against two empty
- * boxes. */
 const SAMPLE_PRODUCT = {
   sku: "PUSAMPLE0001",
   name: "Sample product",

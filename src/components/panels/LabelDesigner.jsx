@@ -43,12 +43,6 @@ const ALIGN_ICONS = {
   right: IconAlignRight,
 };
 
-/**
- * The six places an element can be sent on the label, in the order of a
- * toolbar: across, then down. These are actions rather than a setting — the
- * element's position stays the two numbers above them, and this only writes
- * the number an edge or a centre works out to.
- */
 const SNAP_POSITIONS = [
   { axis: "x", position: "start", labelKey: "lbl.align.left", Icon: IconAlignLeft },
   { axis: "x", position: "center", labelKey: "lbl.align.center", Icon: IconAlignCenter },
@@ -58,23 +52,11 @@ const SNAP_POSITIONS = [
   { axis: "y", position: "end", labelKey: "lbl.align.bottom", Icon: IconAlignBottom },
 ];
 
-/**
- * The label designer: a live label on the left, everything that decides how it
- * looks on the right.
- *
- * The draft is the whole template, edited in place, so the preview is never a
- * rendering of the settings — it is the label itself, drawn by the component
- * the printer uses. Saving hands that draft to the provider, which is where
- * Inventory reads it from at print time; until then the saved design is
- * untouched, and Discard is simply the draft thrown away.
- */
 export function LabelDesigner({ product, onBack }) {
   const { t } = useTranslation();
   const { template: saved, save } = useLabelTemplate();
   const [saving, runSave] = usePending();
   const [draft, setDraft] = useState(saved);
-  // Opens on the product name: the piece most likely to need the room, and the
-  // one whose settings show what the panel can do.
   const [selectedId, setSelectedId] = useState("name");
 
   const dirty = !isSameTemplate(draft, saved);
@@ -90,10 +72,6 @@ export function LabelDesigner({ product, onBack }) {
   const setGeometry = (id, box) =>
     setDraft((current) => withElement(current, id, box));
 
-  // Two panes filling the screen once there is room for them side by side.
-  // Narrower than that, the pane heights are let go and the page scrolls as
-  // one — a settings panel scrolling inside a short box of its own is worse
-  // than a long page on a phone.
   return (
     <div className="flex flex-col gap-4 lg:h-full lg:min-h-0">
       <div className="flex flex-wrap items-center gap-2">
@@ -122,11 +100,6 @@ export function LabelDesigner({ product, onBack }) {
         </Button>
       </div>
 
-      {/* The row is spelled out as `minmax(0, 1fr)` rather than left to
-          default: an implicit row is sized to its tallest item, so the settings
-          panel would set the height of the pane it is supposed to be scrolling
-          inside, and push the whole grid past the bottom of the screen. Pinned
-          to the grid's own height, the panel shrinks and scrolls instead. */}
       <div className="grid gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_340px] lg:grid-rows-[minmax(0,1fr)]">
         <Card className="flex min-h-[340px] flex-col overflow-hidden">
           <LabelCanvas
@@ -380,8 +353,6 @@ export function LabelDesigner({ product, onBack }) {
   );
 }
 
-/** A labelled row of controls that are not a single input, so the label is a
- * caption rather than a `<label>` pointing at one of them. */
 function Control({ label, children }) {
   return (
     <div className="mt-2">
@@ -404,16 +375,6 @@ function Section({ title, last = false, children }) {
   );
 }
 
-/**
- * A number that is edited both by typing and by dragging the label.
- *
- * What is typed is held as text until it is worth acting on: a value inside
- * the allowed range is applied on the keystroke, so the preview keeps up,
- * while one that is not — an empty field, a half-typed "1" on the way to
- * "18" — is left alone rather than snapped to the nearest limit under the
- * cursor. Leaving the field settles it, and a change made by dragging arrives
- * through `value` and replaces whatever is in the box.
- */
 function NumberField({ label, value, onChange, min, max, step = 1 }) {
   const [text, setText] = useState(String(value));
 

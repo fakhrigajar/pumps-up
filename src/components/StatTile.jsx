@@ -6,14 +6,6 @@ import { linePath } from './charts/shapes'
 import { CHROME, MARK, SERIES } from './charts/tokens'
 import { useTranslation } from '../i18n/context'
 
-/**
- * One number, and what it is doing.
- *
- * The comparison and the sparkline are both optional: a figure like the value
- * of the stock on the shelves has nothing to be compared against and no series
- * behind it, and a tile that padded that out with an empty trend line would be
- * describing the layout rather than the shop.
- */
 export function StatTile({ label, value, format, delta, deltaUnit, upIsGood, spark, note }) {
   const { t } = useTranslation()
   const hasDelta = Number.isFinite(delta)

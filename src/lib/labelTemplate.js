@@ -1,32 +1,7 @@
 import { LABEL_MAX_MM, LABEL_MIN_MM } from "./labels";
 
-/**
- * The label design: what a printed label carries, where each piece sits on it,
- * and how it is set.
- *
- * The stock (`width`, `height`, `rotate`) is the physical label; `margin` is
- * the quiet edge kept clear of ink, and what is left inside it is the canvas
- * every element is placed on. Element geometry is a *percentage of that
- * canvas* rather than millimetres, so a design drawn for 50 × 50 stock still
- * holds together when the same design is printed on 40 × 58 — the pieces keep
- * their relative places instead of sliding off the edge. Type is the exception
- * and is absolute (points): a 10 pt price is 10 pt on any stock, which is what
- * anyone setting a font size expects.
- *
- * Fetched from and saved to the server by LabelTemplateProvider, which is why
- * `normalizeTemplate` treats every field as untrusted: a design saved by an
- * older build, or sent by hand, must still print something sane.
- */
-
-/** Bumped when the shape below changes in a way older saves cannot satisfy. */
 export const TEMPLATE_VERSION = 1;
 
-/**
- * The pieces of a label, in the order they are stacked by default — which is
- * also the order they are listed in the designer. `kind` decides what the
- * designer offers: text has type settings, the logo has an alignment inside
- * its box, the symbol only has a size.
- */
 export const LABEL_ELEMENTS = [
   { id: "logo", kind: "logo", labelKey: "lbl.el.logo" },
   { id: "store", kind: "text", labelKey: "lbl.el.store" },
@@ -41,36 +16,19 @@ export const LABEL_ELEMENTS = [
 export const FONT_WEIGHTS = [400, 500, 600, 700];
 export const ALIGNMENTS = ["left", "center", "right"];
 
-/** Millimetres of stock kept clear of ink, at most. Past this a 20 mm label
- * would have nothing left to print on. */
 export const MARGIN_MAX_MM = 8;
 
-/** Points. The floor is around where a laser printer stops resolving a glyph;
- * the ceiling is taller than the shortest label allowed. */
 export const FONT_MIN_PT = 4;
 export const FONT_MAX_PT = 48;
 
 export const LINE_MIN = 0.8;
 export const LINE_MAX = 2.5;
 
-/** Percent of the canvas. Small enough to place a single digit, large enough
- * that an element can never be resized down to something unclickable. */
 export const MIN_ELEMENT_W = 5;
 export const MIN_ELEMENT_H = 3;
 
 export const STORE_NAME_MAX = 48;
 
-/**
- * The design the shop prints today, and what Reset goes back to.
- *
- * The variant is stacked rather than run together: the model name, then the
- * color, then the size, each on its own line under the one before it. A
- * shoe's stored name carries all three ("Nike Air Blue 41"), so the name
- * element prints what is left of it once the other two have their own lines
- * — see `baseName`. A Bag has neither, and its two lines simply come out
- * empty, which is why they are laid out tight enough to leave the gap
- * unremarkable rather than a hole in the label.
- */
 export const DEFAULT_TEMPLATE = {
   version: TEMPLATE_VERSION,
   width: 50,
@@ -79,10 +37,6 @@ export const DEFAULT_TEMPLATE = {
   margin: 2.5,
   storeName: "PUMPS UP BAKU",
   elements: {
-    // Off to begin with: the shipped design says the shop's name in type, and
-    // a label that suddenly grew a wordmark over it would be a surprise. The
-    // box it switches on into is the wordmark's own proportions, near enough
-    // that turning it on is not immediately a resizing job.
     logo: {
       visible: false,
       x: 15,
@@ -167,15 +121,10 @@ export const DEFAULT_TEMPLATE = {
   },
 };
 
-/** The area left inside the label's margin: everything is placed against it,
- * so widening the margin moves the whole design in rather than clipping it. */
 export function canvasStyle(template) {
   return { inset: `${template.margin}mm` };
 }
 
-/** An element's box, as a share of that canvas. Shared with the designer,
- * which lays its drag handles over the real label — the two have to agree to
- * the pixel, so they are placed by the same function. */
 export function boxStyle({ x, y, w, h }) {
   return {
     left: `${x}%`,
@@ -185,11 +134,6 @@ export function boxStyle({ x, y, w, h }) {
   };
 }
 
-/**
- * An element pushed against an edge of the canvas, or centred on it — the same
- * six moves a drag can make by eye, made exactly. The other axis is left
- * alone, so aligning left never also moves an element up.
- */
 export function alignBox(box, axis, position) {
   const room = 100 - (axis === "x" ? box.w : box.h);
   const value = position === "start" ? 0 : position === "end" ? room : room / 2;
@@ -198,16 +142,12 @@ export function alignBox(box, axis, position) {
 
 export const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
-/** Geometry is kept to one decimal: finer than a drag can be aimed, coarse
- * enough that the number fields stay readable. */
 export const roundGeometry = (value) => Math.round(value * 10) / 10;
 
 function number(value, fallback, min, max, round = (n) => n) {
   const parsed = typeof value === "string" ? Number(value) : value;
   const usable =
     typeof parsed === "number" && Number.isFinite(parsed) ? parsed : fallback;
-  // The fallback is clamped too: a stored width of 100 leaves no room for the
-  // default x beside it, and the pair has to end up describing a box that fits.
   return round(clamp(usable, min, max));
 }
 
@@ -215,11 +155,6 @@ function pick(value, allowed, fallback) {
   return allowed.includes(value) ? value : fallback;
 }
 
-/**
- * A box clamped to the canvas. Width is settled first so that a stored `x`
- * can be held to what is left of the canvas beside it — the pair can never
- * describe an element hanging off the right edge, whatever was stored.
- */
 function normalizeBox(source, fallback) {
   const w = number(source.w, fallback.w, MIN_ELEMENT_W, 100, roundGeometry);
   const h = number(source.h, fallback.h, MIN_ELEMENT_H, 100, roundGeometry);
@@ -244,8 +179,6 @@ function normalizeElement({ id, kind }, source, defaults) {
     h: box.h,
   };
 
-  // The wordmark keeps its proportions inside whatever box it is given, so
-  // alignment is where it sits in the leftover room.
   if (kind === "logo") {
     return { ...element, align: pick(raw.align, ALIGNMENTS, fallback.align) };
   }
@@ -265,11 +198,6 @@ function normalizeElement({ id, kind }, source, defaults) {
   };
 }
 
-/**
- * A complete, printable template built from whatever was passed in — every
- * missing or impossible field replaced by the default's. Keys are written in a
- * fixed order so two normalized templates can be compared as JSON.
- */
 export function normalizeTemplate(source) {
   const raw = source && typeof source === "object" ? source : {};
   const defaults = DEFAULT_TEMPLATE.elements;
@@ -294,12 +222,10 @@ export function normalizeTemplate(source) {
   };
 }
 
-/** True when two normalized templates would print the same label. */
 export function isSameTemplate(one, other) {
   return JSON.stringify(one) === JSON.stringify(other);
 }
 
-/** A template with one element's fields replaced, normalized on the way out. */
 export function withElement(template, id, changes) {
   return normalizeTemplate({
     ...template,

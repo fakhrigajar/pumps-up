@@ -4,14 +4,6 @@ import { useTranslation } from "../../i18n/context";
 
 const LIMIT = 7;
 
-/**
- * What is about to run out — still sellable, but not for long.
- *
- * The bar is stock against the threshold rather than against the biggest row,
- * so the mark means the same thing every time the panel is drawn: a bar that
- * is nearly empty is nearly out of stock, not merely the smallest number on
- * screen today.
- */
 export function LowStock({ products }) {
   const { t } = useTranslation();
   const rows = products.slice(0, LIMIT);

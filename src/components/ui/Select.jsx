@@ -2,35 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { IconCheck, IconChevronDown } from "../Icons";
 
-/**
- * A select drawn by the app rather than by the operating system.
- *
- * A native `<select>` puts its menu beyond CSS: the list is painted by the OS,
- * in the OS's type and colors, and it ignores the theme the rest of the screen
- * is wearing. This is the same menu the language and export buttons drop —
- * app surfaces, app ink, a tick against the current choice — so every list of
- * choices in the app looks like the same control.
- *
- * The menu is portalled to the body and pinned to the viewport, because half
- * of these fields sit in a scrolling panel or a dialog that is `overflow`
- * hidden: laid out in place, the menu would be cut off at the edge of the box
- * it belongs to. Pinned, it cannot follow the field when the page moves under
- * it, so it closes instead.
- */
-
-/** Space between the field and its menu, matching the header menus' `mt-1.5`. */
 const MENU_GAP = 6;
 
-/** How much room below the field is worth opening into before the menu gives
- * up and opens upwards instead. */
 const MENU_ROOM = 180;
 
 const SIZES = { sm: "h-8", md: "h-9" };
 
 const TRIGGERS = {
-  // The filter pills: they hug their content and sit on a card.
   pill: "gap-1.5 bg-surface-1 pl-3 pr-2 hover:bg-surface-2",
-  // Form fields: full width, and a shade darker so they read as inputs.
   field: "w-full gap-2 bg-surface-2 px-3 hover:bg-surface-3",
 };
 
@@ -54,10 +33,6 @@ export function Select({
   const selectedIndex = options.findIndex((option) => option.value === value);
   const selected = options[selectedIndex];
 
-  // Opening moves focus onto the current choice. The field is measured in the
-  // same breath rather than in an effect afterwards: the menu has to be on
-  // screen by the time the focus below goes looking for an item to land on,
-  // and an effect would leave a first render with no menu in it at all.
   function openMenu() {
     setAnchor(triggerRef.current.getBoundingClientRect());
     setOpen(true);
@@ -79,10 +54,6 @@ export function Select({
       if (!inside) setOpen(false);
     };
 
-    // Caught on the way down, before anything else can hear it: an open menu
-    // owns the next Escape. A dialog holding this field is listening on the
-    // window too, and it must not take the same keystroke as its own — the
-    // first Escape closes the menu, not the half-filled form behind it.
     const onEscape = (event) => {
       if (event.key !== "Escape") return;
       event.stopPropagation();
@@ -121,9 +92,6 @@ export function Select({
 
     switch (event.key) {
       case "Tab":
-        // Focus is in a menu at the end of the document, so letting Tab run
-        // would land somewhere unrelated to the field. It goes back to the
-        // field instead, and the next Tab carries on from there.
         event.preventDefault();
         return close();
       case "ArrowDown":
@@ -179,8 +147,6 @@ export function Select({
               aria-label={label}
               onKeyDown={onMenuKeyDown}
               style={menuStyle(anchor)}
-              // Above the dialog layer: a field inside a modal drops its menu
-              // over the modal, not behind it.
               className="fixed z-[60] overflow-y-auto rounded-lg border border-line bg-surface-1 py-1 shadow-pop"
             >
               {options.map((option, index) => {
@@ -218,9 +184,6 @@ export function Select({
   );
 }
 
-/** The menu against its field: as wide as the field at least, below it when
- * there is room and above it when there is not, and never taller than the
- * space it opened into. */
 function menuStyle(anchor) {
   const below = window.innerHeight - anchor.bottom;
   const dropUp = below < MENU_ROOM && anchor.top > below;

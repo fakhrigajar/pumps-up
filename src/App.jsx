@@ -50,14 +50,6 @@ export default function App() {
   const [activityLog, setActivityLog] = useState([]);
   const [openShift, setOpenShift] = useState(null);
 
-  // Everything logged up to this moment has been seen. A watermark rather
-  // than a read flag on every entry: marking the log read is one number to
-  // move, and an entry issued after that moment is unread on its own terms.
-  //
-  // It lives on the account, server-side, and arrives with the session — so a
-  // feed that has been read stays read through a reload, a sign-out, and a
-  // sign-in from another machine. Held in state as well because the badge has
-  // to clear on the click rather than on the round trip.
   const [readThroughAt, setReadThroughAt] = useState(0);
 
   useEffect(() => {
@@ -74,24 +66,17 @@ export default function App() {
 
   const markActivityRead = useCallback(() => {
     if (!signedIn) return;
-    // Cleared at once, then corrected to whatever the server recorded. The
-    // badge and the panel's own new marks answering the click are the whole
-    // point of it; waiting on the request would make the button feel like it
-    // had missed.
     setReadThroughAt(Date.now());
     activityApi
       .markRead()
-      .then(setReadThroughAt)
+      .then((at) => {
+        setReadThroughAt(at);
+        session.noteActivityRead(at);
+      })
       .catch(() => {
-        // The mark did not stick. Nothing to say about it — the reader has
-        // still seen the entries, and the badge comes back on the next reload
-        // rather than a failure notice landing over an unrelated screen.
       });
-  }, [signedIn?.login]);
+  }, [signedIn?.login, session]);
 
-  // What every signed-in role needs, fetched once per session rather than
-  // shipped as static data: the catalogue (Sales needs it too, not just
-  // Inventory), the recent activity feed, and this account's own shift.
   useEffect(() => {
     if (!signedIn) return undefined;
     let cancelled = false;
@@ -111,8 +96,6 @@ export default function App() {
     };
   }, [signedIn?.login]);
 
-  // The account list is admin-only data — a cashier's browser never asks for
-  // it, matching the page it feeds (Users) being an admin-only nav item.
   useEffect(() => {
     if (!signedIn || signedIn.role !== "admin") {
       setUserList([]);
@@ -127,18 +110,10 @@ export default function App() {
     };
   }, [signedIn?.login, signedIn?.role]);
 
-  // Every mutation below says so when it lands. The dialogs already report
-  // their own failures inline, next to the field that caused them, so what is
-  // missing is the other half: a row changing behind a dialog that has just
-  // closed is not, on its own, confirmation that the server agreed.
   const addProducts = useCallback(async (newProducts) => {
     const { products: created, activity: entries } = await productsApi.add(newProducts);
     setProductList((list) => [...created, ...list]);
     setActivityLog((log) => [...entries, ...log]);
-    // Naming the product only reads right when there is exactly one, and
-    // that is not the same question as which plural form to use: Russian
-    // puts 21 in its `one` category, so the choice is made here rather than
-    // left to a `_one` template that quietly drops the count.
     notify(
       created.length === 1
         ? t("toast.added", { name: created[0].name })
@@ -148,9 +123,6 @@ export default function App() {
     return created;
   }, [notify, t]);
 
-  // The name comes back on the log entry rather than out of the catalogue:
-  // by the time there is something to announce, the product it named is gone
-  // from the list this would have looked it up in.
   const deleteProduct = useCallback(async (sku) => {
     const { sku: deletedSku, activity: entries } = await productsApi.remove(sku);
     setProductList((list) => list.filter((item) => item.sku !== deletedSku));
@@ -173,8 +145,6 @@ export default function App() {
     return product;
   }, [notify, t]);
 
-  // Nothing downstream catches these — the register bar calls them straight
-  // from its buttons — so they answer for themselves, either way.
   const openRegister = useCallback(async () => {
     try {
       setOpenShift(await ordersApi.open());
@@ -184,8 +154,6 @@ export default function App() {
     }
   }, [notify, t]);
 
-  // The takings are read off the shift being closed, before the call: what
-  // comes back is a till with no session on it, which is the point.
   const closeRegister = useCallback(async () => {
     const takings = openShift ? sessionTotals(openShift).revenue : 0;
     try {
@@ -233,12 +201,6 @@ export default function App() {
 
   const clearSale = useCallback(() => setSaleLines([]), []);
 
-  /**
-   * Checkout. Ported from the client-side `completeSale` this used to be —
-   * the same call, but now one request the server commits as a single
-   * transaction (ledger rows, the shift's order, the stock decrement) rather
-   * than three separate `useState` updates trusted to stay in sync.
-   */
   const completeSale = useCallback(
     async (sold) => {
       const result = await ordersApi.create(payment, sold);
@@ -276,9 +238,6 @@ export default function App() {
     notify(t("toast.userDeleted", { name: login }), "success");
   }, [notify, t]);
 
-  // An account editing itself on the settings screen. The session follows a
-  // rename in the same breath the list is rewritten, so a rename reads as a
-  // rename rather than an accidental sign-out.
   const updateAccount = useCallback(
     async (login, changes) => {
       const updated = await usersApi.updateSelf(changes);
@@ -316,11 +275,6 @@ export default function App() {
     const tillClosed = signedIn?.role === "cashier" && !openShift;
     const inSale = saleLines.find((line) => line.sku === product?.sku)?.qty ?? 0;
 
-    // A code that matched nothing is a failure; a till that is not open yet
-    // and a product already rung up to its last unit are both the scan
-    // working correctly and finding a reason not to proceed. Same beep — the
-    // hand reaching for the next item needs stopping either way — but the
-    // card that explains it is not red for the two that are recoverable.
     const problem = !product
       ? { message: t("scan.notFound"), tone: "error" }
       : tillClosed
@@ -340,10 +294,6 @@ export default function App() {
 
   useBarcodeScanner(onScan, { enabled: Boolean(signedIn) });
 
-  // A tab resuming a session has a moment where it does not yet know who is
-  // signed in; showing the sign-in screen through it would ask a signed-in
-  // cashier to sign in again for a frame. A tab that never signed in skips
-  // this entirely — `authChecked` starts true there.
   if (!session.authChecked) {
     return <LoadingScreen />;
   }

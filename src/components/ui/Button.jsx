@@ -1,7 +1,5 @@
 import { IconSpinner } from '../Icons'
 
-/** The variant's own colors, without the hover — a button that is working
- *  keeps its color but stops reacting to the pointer. */
 const VARIANTS = {
   primary: 'bg-accent text-white',
   secondary: 'border border-line bg-surface-1 text-ink-2',
@@ -26,13 +24,6 @@ const STYLES = {
   warning: { backgroundColor: 'var(--status-warning)', color: 'var(--on-status)' },
 }
 
-/**
- * One flat look for every unavailable button, rather than a faded copy of the
- * enabled one. A filled variant dimmed to 45% leaves white text over a pale
- * wash of its own color, and the blanket `disabled:hover:bg-surface-1` this
- * replaces went further: hovering a disabled primary swapped the fill for the
- * page surface and left the white label on top of it, invisible.
- */
 const DISABLED = 'cursor-not-allowed border border-line bg-surface-2 text-ink-3'
 
 const SIZES = {
@@ -40,12 +31,6 @@ const SIZES = {
   sm: 'h-7 gap-1 px-2.5 text-[12px]',
 }
 
-/**
- * `pending` is a third state rather than a flavour of `disabled`: both refuse
- * a click, but one is a button with nothing to do and the other is a button
- * mid-request. Keeping the variant's color under the spinner is what says
- * which — grey would read as the action having switched itself off.
- */
 export function Button({
   variant = 'secondary',
   size = 'md',

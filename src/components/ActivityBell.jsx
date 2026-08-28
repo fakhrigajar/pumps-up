@@ -3,8 +3,6 @@ import { IconBell } from "./Icons";
 import { ActivityLog } from "./panels/ActivityLog";
 import { useTranslation } from "../i18n/context";
 
-/** Past this the badge stops counting and starts saying "more than it can
- * show": a bell is a nudge to open the log, not a readout of it. */
 const BADGE_LIMIT = 9;
 
 export function ActivityBell({
@@ -34,16 +32,8 @@ export function ActivityBell({
     };
   }, [open]);
 
-  // Opening the panel reads nothing. Having the log in front of you is not
-  // the same as having read it, and a badge that cleared on the way in would
-  // take the entries the reader had not got to yet with it — the footer's
-  // button is the only thing that moves the watermark.
   const toggle = () => setOpen((value) => !value);
 
-  // Leaving for the full page closes the panel behind it: it is a dropdown
-  // anchored to a bell, not a second window onto the screen now being opened.
-  // Without a handler there is no page to send anyone to — a cashier cannot
-  // open the activity screen — and the panel simply does without the footer.
   const viewMore = onViewMore
     ? () => {
         setOpen(false);
@@ -71,7 +61,6 @@ export function ActivityBell({
           </span>
         ) : null}
         <span className="sr-only">{t("activity.title")}</span>
-        {/* The badge rounds off at 9+; the name it is read out by does not. */}
         {unread > 0 ? (
           <span className="sr-only">{t("activity.unread", { count: unread })}</span>
         ) : null}

@@ -38,12 +38,6 @@ export function ThemeProvider({ children }) {
     }
   }, [theme])
 
-  /* The accent is written onto <html> as the two tokens it decides, which is
-     what puts it above both :root and .dark — and why the default writes
-     nothing at all: the stylesheet already defines that pair for both themes,
-     and clearing the properties hands them back to it rather than pinning one
-     theme's blue over the other's. Both are read again on every theme change,
-     since each theme has its own value for the same accent. */
   useEffect(() => {
     const root = document.documentElement
 

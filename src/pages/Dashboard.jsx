@@ -27,17 +27,6 @@ import { useTranslation } from "../i18n/context";
 import { reports as reportsApi } from "../api/reports";
 import { useAsync } from "../api/useAsync";
 
-/**
- * The shop at a glance, in the order somebody actually asks about it: how the
- * period is going, what is selling, what is on the shelves, and what has just
- * been touched.
- *
- * The sections are what make that an argument rather than a wall of cards —
- * a heading says which question the next few panels answer, and only the
- * first two follow the period filter. The stock figures are a count of the
- * shelves right now.
- */
-
 const HOUR = (hour) => String(hour).padStart(2, "0");
 
 export function Dashboard({ products, activityLog }) {
@@ -47,9 +36,6 @@ export function Dashboard({ products, activityLog }) {
   const period = dateRanges.find((item) => item.id === range) ?? dateRanges[0];
   const monthsBack = period.monthsBack;
 
-  // Every number below used to be a useMemo over the full in-memory ledger;
-  // now it is one request to the endpoint that runs the same math server-side
-  // over whatever MongoDB has, refetched whenever the period picker changes.
   const { data, loading } = useAsync(
     () => reportsApi.dashboard(monthsBack),
     [monthsBack],
@@ -424,7 +410,6 @@ export function Dashboard({ products, activityLog }) {
   );
 }
 
-/** A band of the dashboard, and the question it answers. */
 function Section({ title, hint, children }) {
   return (
     <section className="space-y-4">

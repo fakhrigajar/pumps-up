@@ -40,8 +40,6 @@ export function Sidebar({ current, onNavigate, open, onClose, footerRef }) {
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-4">
-          {/* A section with nothing in it for this role is not an empty
-              heading — it is not a section this role has. */}
           {NAV_SECTIONS.map((section) => ({
             ...section,
             items: section.items.filter((item) => item.roles.includes(user.role)),
@@ -83,9 +81,6 @@ export function Sidebar({ current, onNavigate, open, onClose, footerRef }) {
         </nav>
 
         <div ref={footerRef} className="shrink-0 border-t border-line p-3">
-          {/* Settings sit in the footer but are gated like any other page —
-              the same list the router checks, so the button is never on
-              screen for a role that would be turned away by pressing it. */}
           {SETTINGS_ITEM.roles.includes(user.role) ? (
             <button
               type="button"
@@ -114,15 +109,6 @@ export function Sidebar({ current, onNavigate, open, onClose, footerRef }) {
                 {t(`role.${user.role}`)}
               </p>
             </div>
-            {/* The one button here that ends something, so it wears the same
-                red the delete actions wear, and on hover it becomes the same
-                filled red the destructive buttons are.
-
-                Filled rather than tinted because a tint cannot pass in both
-                themes: any wash light enough to read as a hover on the dark
-                surface moves *towards* a mid red and drops the icon under the
-                3:1 an icon needs. White on the full red is one ratio, the
-                same in either theme. */}
             <button
               type="button"
               onClick={signOut}

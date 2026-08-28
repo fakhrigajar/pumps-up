@@ -1,15 +1,3 @@
-/**
- * The one place a fetch actually happens. Every request carries cookies
- * (`credentials: "include"`) so the httpOnly session cookie set by
- * /api/auth/login rides along automatically — nothing here ever touches a
- * token directly.
- *
- * The API is a separate deployment from this frontend (its own Railway
- * service), so this is a cross-origin request in every real environment —
- * `VITE_API_URL` is the absolute base to send it to. Only bare local dev,
- * with no `VITE_API_URL` set and a server running on the same machine, falls
- * back to a same-origin relative path.
- */
 const API_BASE = import.meta.env.VITE_API_URL?.replace(/\/$/, "") ?? "";
 
 export class ApiError extends Error {

@@ -35,8 +35,6 @@ export function Sales({
   const [returning, setReturning] = useState(false);
   const panelRef = useRef(null);
 
-  // A till that has to be opened is a cashier's; an admin ringing something up
-  // is not on a shift and is not asked to start one.
   const locked = register.required && !register.session;
 
   const sellable = useMemo(
@@ -62,18 +60,6 @@ export function Sales({
 
   const quantityOf = (sku) => lines.find((line) => line.sku === sku)?.qty ?? 0;
 
-  /**
-   * The till catching up with a scan the app answered above it.
-   *
-   * The code goes into the search box, which makes what the scanner actually
-   * sent visible on screen: a scan that finds nothing leaves its digits there
-   * to be read against the label, and the table filters to the row it matched
-   * when it found one. That also overwrites whatever had been typed to find
-   * the last product — the stray first character a scan aimed at a focused
-   * field leaves behind before the burst is recognised as one included. Then
-   * the basket takes focus, so what the screen points at is the line that
-   * just changed, whether this page was already open or has just arrived.
-   */
   useEffect(() => {
     if (!lastScan) return;
     setQuery(lastScan.code);
@@ -165,14 +151,6 @@ export function Sales({
   );
 }
 
-/**
- * The shift, above everything it governs: what the till is doing, what it has
- * taken so far, and the one button that changes it.
- *
- * Closing is the end of a shift rather than a pause, so it asks first — the
- * takings stop being addable to the moment it is pressed, and reopening starts
- * a second session rather than resuming the first.
- */
 function RegisterBar({ register, locked }) {
   const { t } = useTranslation();
   const [confirming, setConfirming] = useState(false);

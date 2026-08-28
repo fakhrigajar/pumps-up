@@ -322,12 +322,6 @@ export function Reports() {
   );
 }
 
-/**
- * The page scrolls, so the column headers ride up and stop at the top of it.
- * The offset is the negative of `main`'s own padding: `top: 0` would pin them
- * to the *content* edge and leave a band of padding above, through which the
- * rows would go on scrolling in plain sight.
- */
 function Th({ children, align, className = "" }) {
   return (
     <th

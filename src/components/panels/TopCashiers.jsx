@@ -3,14 +3,6 @@ import { SERIES } from "../charts/tokens";
 import { formatPrice } from "../../lib/format";
 import { useTranslation } from "../../i18n/context";
 
-/**
- * The counter, ranked.
- *
- * Revenue orders the list and the bar draws it, because it is the one figure
- * that means the same thing for everybody. Profit and orders sit beside it as
- * numbers rather than as bars of their own: three bars per row would be a
- * chart nobody can read across, and the ranking is what the panel is for.
- */
 export function TopCashiers({ rows }) {
   const { t } = useTranslation();
   const peak = rows.reduce((max, row) => Math.max(max, row.revenue), 0) || 1;

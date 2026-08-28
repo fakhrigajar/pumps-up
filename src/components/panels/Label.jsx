@@ -10,16 +10,6 @@ import {
   LABEL_ELEMENTS,
 } from "../../lib/labelTemplate";
 
-/**
- * One label, drawn from a design template. Shared by the print sheet, the
- * print dialog's preview and the label designer, so what is on screen before
- * printing is the same markup that reaches the paper.
- *
- * `template.rotate` turns the design a quarter turn *inside* the page rather
- * than changing the page: the stock stays 40 × 58 because that is what is
- * loaded in the printer, and the design runs along the other axis. See the
- * label block in index.css for how the face is swapped and turned.
- */
 export function Label({ product, template = DEFAULT_TEMPLATE }) {
   const code = barcodeValue(product.sku);
 
@@ -70,23 +60,12 @@ export function Label({ product, template = DEFAULT_TEMPLATE }) {
   );
 }
 
-/**
- * Where the wordmark sits in a box that is not its own shape. It keeps its
- * proportions — a stretched logo is a wrong logo — so one axis usually has
- * room to spare, and the element's alignment says which end of it to take.
- */
 const FIT = {
   left: "xMinYMid meet",
   center: "xMidYMid meet",
   right: "xMaxYMid meet",
 };
 
-/**
- * Digits under a symbol are set wide apart, which leaves a trailing gap after
- * the last one. Pulling the span's right edge back by that gap keeps the row
- * optically centred over the bars — and lined up with the box's right edge
- * when the row is set right.
- */
 const CODE_TRACKING = 0.18;
 
 function textStyle(id, element) {
@@ -107,10 +86,6 @@ function textStyle(id, element) {
 
 function textOf(id, product, template, code) {
   if (id === "store") return template.storeName;
-  // The three pieces of a listing, printed apart. A product with no variant
-  // to its name — a Bag — leaves the last two empty rather than printing a
-  // placeholder: a label is read at arm's length, and a dash there would be
-  // one more thing on it to work out.
   if (id === "name") return baseName(product);
   if (id === "color") return product.color ?? "";
   if (id === "size") return product.size == null ? "" : String(product.size);

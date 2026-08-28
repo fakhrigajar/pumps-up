@@ -157,10 +157,6 @@ export function ProductFormDialog({
     sellingPrice: product ? String(product.sellingPrice) : '',
   }))
   const [colors, setColors] = useState(() => [blankColor()])
-  // A Bag has no color card of its own to carry its digits, so the dialog
-  // holds one directly — picked once, up front, for the same reason a
-  // color's is: a stable preview instead of one that reshuffles as the
-  // fields fill in. Unused, and harmless, when editing or adding a Shoe.
   const [bagDigits] = useState(() => randomDigits4())
   const [error, setError] = useState(null)
   const [saving, runSave] = usePending()
@@ -192,11 +188,6 @@ export function ProductFormDialog({
   const isShoe = form.category === 'Shoe'
   const showColors = !editing && isShoe
 
-  // Editing: the record's own, unchangeable id. Adding a Shoe: just the
-  // shared "PU" + name-code stem — each color's own card shows the rest,
-  // since the color and its random digits aren't decided at this level.
-  // Adding a Bag: the actual id it will be saved under, since a Bag has
-  // nothing left to append.
   const baseSku = editing
     ? product.sku
     : showColors
@@ -239,11 +230,6 @@ export function ProductFormDialog({
       }
 
       const rows = []
-      // The catalogue's ids plus every id minted by this submit, so two rows
-      // created together cannot land on the same one either — two colors can
-      // share a code ("Grey" and "Gray" are both GRY), and from there it is
-      // only the digits keeping them apart. Uppercased, because a catalogue id
-      // is compared without regard to case.
       const taken = new Set(existingSkus.map((sku) => sku.toUpperCase()))
 
       for (const [index, color] of colors.entries()) {
@@ -261,10 +247,6 @@ export function ProductFormDialog({
         if (stockedSizes.length === 0) return setError(t('err.colorEmpty', { name: colorName }))
 
         for (const size of stockedSizes) {
-          // One draw per size, not per color: each variant is its own listing
-          // and gets its own random number. The digits are the system's to
-          // pick, so a collision is resolved by drawing again rather than by
-          // asking the user to fix an id field that no longer exists.
           const idFor = (d) => sizedSku(colorSkuStem(name, colorName, d), size)
           const digits = pickDigits(idFor, taken)
 
@@ -289,10 +271,6 @@ export function ProductFormDialog({
       }
     }
 
-    // Editing keeps the record's own, already-assigned id untouched — the
-    // check below only guards against it somehow no longer being unique.
-    // Adding a Bag generates one the same way a color does: pick, and only
-    // re-pick if it collides.
     let finalSku = baseSku
     if (!editing) {
       let digits = bagDigits
@@ -519,14 +497,6 @@ export function DeleteProductDialog({ product, onCancel, onConfirm }) {
   )
 }
 
-/**
- * A return, from the till: which product is coming back, then how many and why.
- *
- * The sale screen has no selected row to start from — clicking a product there
- * puts it in the basket — so the dialog picks its own, out of the whole
- * catalogue rather than the sellable part of it. Something returned is very
- * often something the shelf has none of, which is exactly what a return fixes.
- */
 export function ReturnProductDialog({ products, onCancel, onConfirm }) {
   const [sku, setSku] = useState(null)
   const product = products.find((item) => item.sku === sku) ?? null

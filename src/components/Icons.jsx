@@ -88,8 +88,6 @@ export const IconEyeOff = (p) => (
   </Icon>
 )
 
-/** Spun by `.spin` in index.css, so a button mid-request reads as working
- *  rather than as one that has simply stopped responding. */
 export const IconSpinner = ({ className = 'h-5 w-5', ...rest }) => (
   <Icon className={`spin ${className}`} {...rest}>
     <path d="M12 3a9 9 0 1 0 9 9" />

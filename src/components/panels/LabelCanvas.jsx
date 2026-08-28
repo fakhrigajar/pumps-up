@@ -14,20 +14,11 @@ import { useTranslation } from "../../i18n/context";
 
 const PX_PER_MM = 96 / 25.4;
 
-/** Room left around the label inside the stage, in pixels, so the handles on
- * an edge have somewhere to sit. */
 const STAGE_PADDING = 28;
 
-/** A label is a small object and the screen is not: blowing it up is the point
- * of the preview. The ceiling keeps a 20 mm label from filling a monitor. */
 const MAX_ZOOM = 7;
 const MIN_ZOOM = 0.15;
 
-/**
- * The eight resize handles as direction vectors: -1 pulls the near edge, +1
- * pushes the far one, 0 leaves that axis alone. One vector drives the handle's
- * position, its cursor and the arithmetic that resizes the box.
- */
 const HANDLES = [
   { id: "nw", x: -1, y: -1 },
   { id: "n", x: 0, y: -1 },
@@ -50,12 +41,6 @@ const CURSORS = {
   "-1,0": "ew-resize",
 };
 
-/**
- * On a rotated design the element's own axes no longer line up with the
- * screen's, so the pointer has to be read in the element's frame: the design
- * is turned a quarter turn clockwise, which puts its x axis down the screen
- * and its y axis to the left.
- */
 function toLocal(dx, dy, rotated) {
   return rotated ? { x: dy, y: -dx } : { x: dx, y: dy };
 }
@@ -68,11 +53,6 @@ function moveBox(box, dx, dy) {
   };
 }
 
-/**
- * Resizing from an edge or a corner. Pulling a near edge moves the origin and
- * grows the box by the same amount, which is what makes the opposite edge stay
- * where it is; both are held inside the canvas and above the minimum size.
- */
 function resizeBox(box, handle, dx, dy) {
   const next = { ...box };
 
@@ -101,15 +81,6 @@ function resizeBox(box, handle, dx, dy) {
   };
 }
 
-/**
- * The label at a workable size, with every element on it draggable.
- *
- * The design is drawn once, by the same `Label` the printer gets; the boxes
- * that can be grabbed are a second, empty copy of the label laid over it. A
- * drag is measured in screen pixels, divided by the zoom and by the canvas's
- * own size, and comes out as the percentages the template is written in — so
- * the element lands where it was dropped at any zoom, on any stock.
- */
 export function LabelCanvas({
   template,
   product,
@@ -132,8 +103,6 @@ export function LabelCanvas({
     MAX_ZOOM,
   );
 
-  // The canvas is what the margin leaves of the face, and on a rotated design
-  // the face is the stock on its side. Percentages are shares of this box.
   const faceWidth = template.rotate ? template.height : template.width;
   const faceHeight = template.rotate ? template.width : template.height;
   const canvasWidth = Math.max(faceWidth - template.margin * 2, 1) * PX_PER_MM;
@@ -185,8 +154,6 @@ export function LabelCanvas({
     }
   }
 
-  // Arrows nudge in the same direction the element appears to move on screen,
-  // which on a rotated design is not the direction its own x and y run.
   function onKeyDown(event, id) {
     const step = event.shiftKey ? 5 : 1;
     const screen = {
@@ -289,8 +256,6 @@ export function LabelCanvas({
   );
 }
 
-/** The cursor for a handle, turned with the design so it still points along
- * the edge it drags. */
 function rotatedCursor(handle, rotated) {
   const vector = rotated ? { x: -handle.y, y: handle.x } : handle;
   return CURSORS[`${vector.x},${vector.y}`];

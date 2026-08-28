@@ -1,24 +1,5 @@
-/**
- * The shop's own settings: what it prices in, and when it is open.
- *
- * These are the shop rather than the reader — a currency is a property of the
- * till, not a preference of whoever is looking at it, and the working hours
- * are what a shift is judged against. They are kept apart from the theme and
- * the language for that reason: those are per-browser tastes, these are one
- * answer the whole shop shares.
- *
- * The settings themselves now live on the server (src/api/settings.js);
- * everything below is the validation and defaults `StoreSettingsProvider`
- * needs on both sides of that request.
- */
-
 export const SETTINGS_VERSION = 1;
 
-/**
- * What the till can be set to. The code is the record; the name is only how
- * the picker reads, and the symbol is drawn by `Intl` from the code so a
- * currency never has to be spelled out twice.
- */
 export const CURRENCIES = [
   { code: "AZN", nameKey: "cur.AZN" },
   { code: "USD", nameKey: "cur.USD" },
@@ -37,9 +18,6 @@ export const DEFAULT_SETTINGS = {
 
 const CLOCK_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
-/** A wall clock as minutes past midnight, or null if it is not one. Times are
- * held as "HH:MM" because that is what a time input speaks and what a person
- * reads; minutes are what arithmetic needs. */
 export function clockToMinutes(clock) {
   const match = CLOCK_PATTERN.exec(clock ?? "");
   if (!match) return null;
@@ -53,8 +31,6 @@ export function minutesToClock(minutes) {
   ).padStart(2, "0")}`;
 }
 
-/** The minutes a timestamp sits from a wall clock on its own day: negative is
- * before the hour, positive is after it. */
 export function minutesFromClock(timestamp, clock) {
   const target = clockToMinutes(clock);
   if (target === null) return null;
@@ -66,12 +42,6 @@ export function isKnownCurrency(code) {
   return CURRENCIES.some((currency) => currency.code === code);
 }
 
-/**
- * Anything the server sends back is treated as a suggestion the same way a
- * localStorage blob used to be: a settings response this build doesn't fully
- * recognize, or a malformed time, must not be able to leave the app with a
- * currency `Intl` cannot format or a closing time that is not a time at all.
- */
 export function normalizeSettings(input) {
   const source = input && typeof input === "object" ? input : {};
   const opensAt = clockToMinutes(source.opensAt) === null
