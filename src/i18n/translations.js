@@ -534,6 +534,8 @@ export const en = {
   "err.signIn": "That login and password do not match an account.",
   "err.generic": "Something went wrong. Try again.",
   "common.loading": "Loading…",
+  "common.loadFailed": "Could not load this data.",
+  "common.retry": "Try again",
 
   "reg.title": "Register sessions",
   "reg.subtitle": "One shift per row, newest first. Open a row for what it sold.",
@@ -1161,6 +1163,8 @@ export const ru = {
   "err.signIn": "Такой пары логина и пароля нет.",
   "err.generic": "Что-то пошло не так. Попробуйте ещё раз.",
   "common.loading": "Загрузка…",
+  "common.loadFailed": "Не удалось загрузить данные.",
+  "common.retry": "Повторить",
 
   "reg.title": "Кассовые смены",
   "reg.subtitle": "Смена в строке, новые сверху. Откройте строку, чтобы увидеть продажи.",
@@ -1760,6 +1764,8 @@ export const az = {
   "err.signIn": "Bu login və şifrə heç bir hesaba uyğun gəlmir.",
   "err.generic": "Nəsə səhv getdi. Yenidən cəhd edin.",
   "common.loading": "Yüklənir…",
+  "common.loadFailed": "Məlumatları yükləmək mümkün olmadı.",
+  "common.retry": "Yenidən cəhd edin",
 
   "reg.title": "Kassa növbələri",
   "reg.subtitle": "Hər sətir bir növbə, ən yenisi yuxarıda. Satışları görmək üçün sətri açın.",
