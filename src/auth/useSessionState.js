@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { auth } from "../api/auth";
+import { setSessionExpiredHandler } from "../api/client";
 import { clearAsyncCache } from "../api/useAsync";
 
 const TAB_KEY = "pumpsup.session";
@@ -24,6 +25,15 @@ export function useSessionState() {
   const [user, setUser] = useState(null);
 
   const [authChecked, setAuthChecked] = useState(() => !hasMarker());
+
+  useEffect(() => {
+    setSessionExpiredHandler(() => {
+      clearAsyncCache();
+      setMarker(false);
+      setUser(null);
+    });
+    return () => setSessionExpiredHandler(null);
+  }, []);
 
   useEffect(() => {
     if (!hasMarker()) return undefined;

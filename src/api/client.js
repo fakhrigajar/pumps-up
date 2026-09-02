@@ -1,4 +1,19 @@
-const API_BASE = import.meta.env.VITE_API_URL?.replace(/\/$/, "") ?? "";
+// The API is always reached on this app's own origin: a proxy forwards /api to
+// the real backend — vite.config.js in development, netlify.toml in production.
+//
+// Deliberately NOT read from an env var. An absolute URL here points the browser
+// straight at the API's domain, which makes the session cookie third-party, and
+// incognito windows, phones, and Safari all discard those — login succeeds and
+// every request after it returns 401. Reading it from the environment meant a
+// leftover VITE_API_URL in a deploy dashboard could reintroduce that silently.
+
+const SESSION_EXPIRED = "unauthorized";
+
+let onSessionExpired = null;
+
+export function setSessionExpiredHandler(handler) {
+  onSessionExpired = handler;
+}
 
 export class ApiError extends Error {
   constructor(status, code, message) {
@@ -10,7 +25,7 @@ export class ApiError extends Error {
 }
 
 async function request(path, { method = "GET", body } = {}) {
-  const response = await fetch(`${API_BASE}/api${path}`, {
+  const response = await fetch(`/api${path}`, {
     method,
     credentials: "include",
     headers: body !== undefined ? { "Content-Type": "application/json" } : undefined,
@@ -23,7 +38,9 @@ async function request(path, { method = "GET", body } = {}) {
   const data = hasBody ? await response.json().catch(() => null) : null;
 
   if (!response.ok) {
-    throw new ApiError(response.status, data?.error ?? "unknown_error", data?.message);
+    const error = new ApiError(response.status, data?.error ?? "unknown_error", data?.message);
+    if (error.status === 401 && error.code === SESSION_EXPIRED) onSessionExpired?.();
+    throw error;
   }
   return data;
 }
