@@ -105,6 +105,10 @@ export function Login({ onSignIn }) {
               {submitting ? t("login.submitting") : t("login.submit")}
             </Button>
           </form>
+
+          <p className="mt-4 whitespace-pre-line text-center text-[12.5px] leading-relaxed text-ink-3">
+            {t("login.demo")}
+          </p>
         </div>
       </main>
     </div>

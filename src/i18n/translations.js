@@ -530,7 +530,7 @@ export const en = {
   "login.submitting": "Signing in…",
   "login.signOut": "Sign out",
   "login.demo":
-    "Demo accounts: admin / admin for the back office, or aysel / kassa for the till.",
+    "Demo accounts (username / password):\nAdmin: admin / admin\nCashiers: aysel / kassa or rauf / kassa",
   "err.signIn": "That login and password do not match an account.",
   "err.generic": "Something went wrong. Try again.",
   "common.loading": "Loading…",
@@ -1159,7 +1159,7 @@ export const ru = {
   "login.submitting": "Вход…",
   "login.signOut": "Выйти",
   "login.demo":
-    "Демо-аккаунты: admin / admin — бэк-офис, aysel / kassa — касса.",
+    "Демо-аккаунты (логин / пароль):\nАдминистратор: admin / admin\nКассиры: aysel / kassa или rauf / kassa",
   "err.signIn": "Такой пары логина и пароля нет.",
   "err.generic": "Что-то пошло не так. Попробуйте ещё раз.",
   "common.loading": "Загрузка…",
@@ -1760,7 +1760,7 @@ export const az = {
   "login.submitting": "Daxil olunur…",
   "login.signOut": "Çıxış",
   "login.demo":
-    "Nümunə hesablar: arxa ofis üçün admin / admin, kassa üçün aysel / kassa.",
+    "Nümunə hesablar (istifadəçi adı / şifrə):\nAdmin: admin / admin\nKassirlər: aysel / kassa və ya rauf / kassa",
   "err.signIn": "Bu login və şifrə heç bir hesaba uyğun gəlmir.",
   "err.generic": "Nəsə səhv getdi. Yenidən cəhd edin.",
   "common.loading": "Yüklənir…",
