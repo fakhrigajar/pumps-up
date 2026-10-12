@@ -1,4 +1,5 @@
-import { LABEL_MAX_MM, LABEL_MIN_MM } from "./labels";
+import { defaultLabelTemplate as DEFAULT_TEMPLATE } from "../data.js";
+import { LABEL_MAX_MM, LABEL_MIN_MM } from "./labels.js";
 
 export const TEMPLATE_VERSION = 1;
 
@@ -29,97 +30,7 @@ export const MIN_ELEMENT_H = 3;
 
 export const STORE_NAME_MAX = 48;
 
-export const DEFAULT_TEMPLATE = {
-  version: TEMPLATE_VERSION,
-  width: 50,
-  height: 50,
-  rotate: false,
-  margin: 2.5,
-  storeName: "PUMPS UP BAKU",
-  elements: {
-    logo: {
-      visible: false,
-      x: 15,
-      y: 0,
-      w: 70,
-      h: 12,
-      align: "center",
-    },
-    store: {
-      visible: true,
-      x: 0,
-      y: 0,
-      w: 100,
-      h: 11,
-      fontSize: 8,
-      fontWeight: 700,
-      align: "center",
-      lineHeight: 1.2,
-    },
-    name: {
-      visible: true,
-      x: 0,
-      y: 12,
-      w: 100,
-      h: 15,
-      fontSize: 10,
-      fontWeight: 700,
-      align: "center",
-      lineHeight: 1.2,
-    },
-    color: {
-      visible: true,
-      x: 0,
-      y: 27.5,
-      w: 100,
-      h: 7.5,
-      fontSize: 7.5,
-      fontWeight: 500,
-      align: "center",
-      lineHeight: 1.2,
-    },
-    size: {
-      visible: true,
-      x: 0,
-      y: 35,
-      w: 100,
-      h: 7.5,
-      fontSize: 7.5,
-      fontWeight: 500,
-      align: "center",
-      lineHeight: 1.2,
-    },
-    barcode: {
-      visible: true,
-      x: 2,
-      y: 43,
-      w: 96,
-      h: 24.5,
-    },
-    code: {
-      visible: true,
-      x: 0,
-      y: 68,
-      w: 100,
-      h: 10,
-      fontSize: 8,
-      fontWeight: 400,
-      align: "center",
-      lineHeight: 1.2,
-    },
-    price: {
-      visible: true,
-      x: 0,
-      y: 79.5,
-      w: 100,
-      h: 20.5,
-      fontSize: 14,
-      fontWeight: 700,
-      align: "center",
-      lineHeight: 1.2,
-    },
-  },
-};
+export { DEFAULT_TEMPLATE };
 
 export function canvasStyle(template) {
   return { inset: `${template.margin}mm` };

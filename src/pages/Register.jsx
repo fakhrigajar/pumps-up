@@ -17,12 +17,10 @@ import {
 import { useSession } from "../auth/context";
 import { useStoreSettings } from "../settings/context";
 import { useTranslation } from "../i18n/context";
-import { orders as ordersApi } from "../api/orders";
-import { useAsync } from "../api/useAsync";
 
 const ALL_CASHIERS = "all";
 
-export function Register({ users }) {
+export function Register({ users, sessions }) {
   const { t } = useTranslation();
   const { user } = useSession();
   const { settings } = useStoreSettings();
@@ -31,19 +29,12 @@ export function Register({ users }) {
   const [cashier, setCashier] = useState(ALL_CASHIERS);
   const [openId, setOpenId] = useState(null);
 
-  const { data: sessions } = useAsync(
-    () => ordersApi.sessions(),
-    [],
-    "orders.sessions",
-  );
-  const allSessions = sessions ?? [];
-
   const mine = useMemo(
     () =>
       admin
-        ? allSessions
-        : allSessions.filter((session) => session.cashier === user.login),
-    [allSessions, admin, user.login],
+        ? sessions
+        : sessions.filter((session) => session.cashier === user.login),
+    [sessions, admin, user.login],
   );
 
   const rows = useMemo(

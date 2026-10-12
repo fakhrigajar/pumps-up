@@ -13,7 +13,7 @@ import {
   normalizeLogin,
 } from "../../data/users";
 import { useTranslation } from "../../i18n/context";
-import { mapApiError } from "../../api/errors";
+import { mapError } from "../../lib/errors";
 import { usePending } from "../../lib/usePending";
 
 function Field({ label, hint, children }) {
@@ -81,7 +81,7 @@ export function UserFormDialog({ users, onCancel, onSubmit }) {
         onSubmit({ login, password: form.password, role: form.role }),
       );
     } catch (err) {
-      return setError(mapApiError(err, t));
+      return setError(mapError(err, t));
     }
   }
 

@@ -26,8 +26,8 @@ export function Sidebar({ current, onNavigate, open, onClose, footerRef }) {
       >
         <div className="flex h-16 shrink-0 items-center justify-between gap-2 border-b border-line px-5">
           <a href="#main" className="flex items-center gap-2 text-ink-1">
-            <Logo className="h-[18px] w-auto" />
-            <span className="sr-only">Pumps Up ERP</span>
+            <Logo className="h-7 w-auto" />
+            <span className="sr-only">ModShop</span>
           </a>
           <button
             type="button"

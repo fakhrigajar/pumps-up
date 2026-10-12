@@ -9,7 +9,7 @@ import { IconPlus, IconTrash } from "../components/Icons";
 import { isLastAdmin } from "../data/users";
 import { useTranslation } from "../i18n/context";
 import { useToast } from "../toast/context";
-import { mapApiError } from "../api/errors";
+import { mapError } from "../lib/errors";
 
 export function Users({ users, onAdd, onDelete }) {
   const { t } = useTranslation();
@@ -76,7 +76,7 @@ export function Users({ users, onAdd, onDelete }) {
               setSelectedLogin(null);
               setDialog(null);
             } catch (error) {
-              notify(mapApiError(error, t), "error");
+              notify(mapError(error, t), "error");
             }
           }}
         />

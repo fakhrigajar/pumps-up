@@ -1,4 +1,5 @@
-import { barcodeValue } from "../lib/barcode";
+import { SKU_PREFIX } from "../brand.js";
+import { barcodeValue } from "../lib/barcode.js";
 
 export const dateRanges = [
   { id: "3m", labelKey: "range.3m", monthsBack: 3 },
@@ -98,15 +99,15 @@ export function randomDigits4(random = Math.random) {
 }
 
 export function colorSkuStem(name, color, digits) {
-  return `PU${productCode(name)}${colorAbbreviation(color)}${digits}`;
+  return `${SKU_PREFIX}${productCode(name)}${colorAbbreviation(color)}${digits}`;
 }
 
 export function colorCodePrefix(name, color) {
-  return `PU${productCode(name)}${colorAbbreviation(color)}`;
+  return `${SKU_PREFIX}${productCode(name)}${colorAbbreviation(color)}`;
 }
 
 export function bagSkuStem(name, digits) {
-  return `PU${productCode(name)}${digits}`;
+  return `${SKU_PREFIX}${productCode(name)}${digits}`;
 }
 
 export function sizedSku(stem, size) {

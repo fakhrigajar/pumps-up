@@ -27,7 +27,7 @@ export function Topbar({
         <span className="sr-only">{t('nav.open')}</span>
       </button>
 
-      <LogoMark className="h-5 w-auto text-ink-1 lg:hidden" />
+      <LogoMark className="h-7 w-auto text-ink-1 lg:hidden" />
 
       <h1 className="hidden text-[15px] font-semibold text-ink-1 lg:block">{title}</h1>
 

@@ -4,7 +4,7 @@ import { dictionaries, en } from './translations'
 import { setFormatLocale } from '../lib/format'
 import { azFormats } from './azFormats'
 
-const STORAGE_KEY = 'pumpsup.language'
+const STORAGE_KEY = 'modshop.language'
 
 function readStored() {
   try {

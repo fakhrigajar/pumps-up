@@ -1,95 +1,49 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { auth } from "../api/auth";
-import { setSessionExpiredHandler } from "../api/client";
-import { clearAsyncCache } from "../api/useAsync";
+import { useCallback, useMemo, useState } from "react";
+import { findUser } from "../data/users.js";
 
-const TAB_KEY = "pumpsup.session";
+const TAB_KEY = "modshop.session";
 
-function hasMarker() {
+function readLogin() {
   try {
-    return sessionStorage.getItem(TAB_KEY) === "1";
+    return sessionStorage.getItem(TAB_KEY);
   } catch {
-    return false;
+    return null;
   }
 }
 
-function setMarker(present) {
+function remember(login) {
   try {
-    if (present) sessionStorage.setItem(TAB_KEY, "1");
+    if (login) sessionStorage.setItem(TAB_KEY, login);
     else sessionStorage.removeItem(TAB_KEY);
   } catch {
+    // Local state still works when browser storage is unavailable.
   }
 }
 
-export function useSessionState() {
-  const [user, setUser] = useState(null);
+export function useSessionState(users) {
+  const [login, setLogin] = useState(readLogin);
+  const account = login ? findUser(users, login) : null;
+  const user = useMemo(() => account ? {
+    login: account.login, role: account.role, activityReadThrough: account.activityReadThrough,
+  } : null, [account]);
 
-  const [authChecked, setAuthChecked] = useState(() => !hasMarker());
+  const signIn = useCallback((candidate, password) => {
+    const found = findUser(users, candidate);
+    if (!found || found.password !== password) return null;
+    remember(found.login);
+    setLogin(found.login);
+    return { login: found.login, role: found.role };
+  }, [users]);
 
-  useEffect(() => {
-    setSessionExpiredHandler(() => {
-      clearAsyncCache();
-      setMarker(false);
-      setUser(null);
-    });
-    return () => setSessionExpiredHandler(null);
-  }, []);
-
-  useEffect(() => {
-    if (!hasMarker()) return undefined;
-    let cancelled = false;
-
-    auth
-      .me()
-      .then((data) => {
-        if (!cancelled) setUser(data.user);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setMarker(false);
-        setUser(null);
-      })
-      .finally(() => {
-        if (!cancelled) setAuthChecked(true);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const signIn = useCallback(async (candidate, password) => {
-    try {
-      const { user: signedInUser } = await auth.login(candidate, password);
-      setMarker(true);
-      setUser(signedInUser);
-      return signedInUser;
-    } catch {
-      return null;
-    }
-  }, []);
-
-  const signOut = useCallback(async () => {
-    await auth.logout().catch(() => {});
-    clearAsyncCache();
-    setMarker(false);
-    setUser(null);
+  const signOut = useCallback(() => {
+    remember(null);
+    setLogin(null);
   }, []);
 
   const follow = useCallback((next) => {
-    setUser((current) => (current ? { ...current, login: next } : current));
+    remember(next);
+    setLogin(next);
   }, []);
 
-  const noteActivityRead = useCallback((at) => {
-    setUser((current) =>
-      current
-        ? { ...current, activityReadThrough: new Date(at).toISOString() }
-        : current,
-    );
-  }, []);
-
-  return useMemo(
-    () => ({ user, authChecked, signIn, signOut, follow, noteActivityRead }),
-    [user, authChecked, signIn, signOut, follow, noteActivityRead],
-  );
+  return useMemo(() => ({ user, signIn, signOut, follow }), [user, signIn, signOut, follow]);
 }

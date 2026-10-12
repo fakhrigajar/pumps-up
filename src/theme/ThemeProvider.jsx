@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ThemeContext } from './context'
 import { ACCENTS, DEFAULT_ACCENT, accentTokens } from './accents'
 
-const STORAGE_KEY = 'pumpsup.theme'
-const ACCENT_KEY = 'pumpsup.accent'
+const STORAGE_KEY = 'modshop.theme'
+const ACCENT_KEY = 'modshop.accent'
 const DEFAULT_THEME = 'light'
 
 function readStored() {

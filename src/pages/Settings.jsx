@@ -27,7 +27,7 @@ import { useSession } from "../auth/context";
 import { useTheme } from "../theme/context";
 import { ACCENTS, accentTokens } from "../theme/accents";
 import { useTranslation } from "../i18n/context";
-import { mapApiError } from "../api/errors";
+import { mapError } from "../lib/errors";
 import { usePending } from "../lib/usePending";
 
 const PREVIEW_AMOUNT = 1234.5;
@@ -189,7 +189,7 @@ function SystemForm() {
     try {
       await runSave(() => update(store));
     } catch (err) {
-      return setError(mapApiError(err, t));
+      return setError(mapError(err, t));
     }
 
     setError(null);
@@ -377,7 +377,7 @@ function AccountForm({ users, currentLogin, onUpdate }) {
     try {
       await runSave(() => onUpdate(changes));
     } catch (err) {
-      return setError(mapApiError(err, t));
+      return setError(mapError(err, t));
     }
 
     if (changingPassword) setPassword(blank);

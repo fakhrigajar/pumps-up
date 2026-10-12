@@ -14,7 +14,7 @@ const TOOLS = [
 ];
 
 const SAMPLE_PRODUCT = {
-  sku: "PUSAMPLE0001",
+  sku: "MSSAMPLE0001",
   name: "Sample product",
   size: 41,
   sellingPrice: 129,

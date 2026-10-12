@@ -11,27 +11,23 @@ import { Tools } from "./pages/Tools";
 import { Register } from "./pages/Register";
 import { Settings } from "./pages/Settings";
 import { Login } from "./pages/Login";
-import { LoadingScreen } from "./components/LoadingScreen";
 import { ModulePlaceholder } from "./pages/ModulePlaceholder";
 import { canOpen, NAV_ITEMS, pagesFor } from "./navigation";
 import { useTranslation } from "./i18n/context";
 import { findByBarcode } from "./data/erp";
 import { sessionTotals } from "./data/register";
+import { normalizeLogin } from "./data/users";
 import { formatPrice } from "./lib/format";
 import { SessionContext } from "./auth/context";
 import { useSessionState } from "./auth/useSessionState";
-import { products as productsApi } from "./api/products";
-import { users as usersApi } from "./api/users";
-import { orders as ordersApi } from "./api/orders";
-import { activity as activityApi } from "./api/activity";
-import { mapApiError } from "./api/errors";
+import { useAppData } from "./data/useAppData";
+import * as store from "./data/store";
+import { mapError } from "./lib/errors";
 import { useMeasure } from "./lib/useMeasure";
 import { useBarcodeScanner } from "./lib/useBarcodeScanner";
 import { errorBeep } from "./lib/beep";
 import { useToast } from "./toast/context";
 import { SALE_PANEL_HEIGHT } from "./lib/layout";
-
-const ACTIVITY_FEED_LIMIT = 100;
 
 export default function App() {
   const { t } = useTranslation();
@@ -42,13 +38,11 @@ export default function App() {
   const [lastScan, setLastScan] = useState(null);
   const [sidebarFooterRef, , sidebarFooterHeight] = useMeasure();
 
-  const session = useSessionState();
+  const [data, apply] = useAppData();
+  const { products: productList, users: userList, activity: activityLog, sales, sessions } = data;
+  const session = useSessionState(userList);
   const signedIn = session.user;
-
-  const [productList, setProductList] = useState([]);
-  const [userList, setUserList] = useState([]);
-  const [activityLog, setActivityLog] = useState([]);
-  const [openShift, setOpenShift] = useState(null);
+  const openShift = signedIn ? store.openSessionOf(data, signedIn.login) : null;
 
   const [readThroughAt, setReadThroughAt] = useState(0);
 
@@ -66,106 +60,56 @@ export default function App() {
 
   const markActivityRead = useCallback(() => {
     if (!signedIn) return;
-    setReadThroughAt(Date.now());
-    activityApi
-      .markRead()
-      .then((at) => {
-        setReadThroughAt(at);
-        session.noteActivityRead(at);
-      })
-      .catch(() => {
-      });
-  }, [signedIn?.login, session]);
+    const at = Date.now();
+    setReadThroughAt(at);
+    apply((state) => ({
+      ...state,
+      users: state.users.map((user) => user.login === signedIn.login ? { ...user, activityReadThrough: at } : user),
+    }));
+  }, [signedIn, apply]);
 
-  useEffect(() => {
-    if (!signedIn) return undefined;
-    let cancelled = false;
-
-    productsApi.list().then((list) => {
-      if (!cancelled) setProductList(list);
-    }).catch(() => {});
-    activityApi.list(ACTIVITY_FEED_LIMIT).then((entries) => {
-      if (!cancelled) setActivityLog(entries);
-    }).catch(() => {});
-    ordersApi.mine().then((mySession) => {
-      if (!cancelled) setOpenShift(mySession);
-    }).catch(() => {});
-
-    return () => {
-      cancelled = true;
-    };
-  }, [signedIn?.login]);
-
-  useEffect(() => {
-    if (!signedIn || signedIn.role !== "admin") {
-      setUserList([]);
-      return undefined;
-    }
-    let cancelled = false;
-    usersApi.list().then((list) => {
-      if (!cancelled) setUserList(list);
-    }).catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [signedIn?.login, signedIn?.role]);
-
-  const addProducts = useCallback(async (newProducts) => {
-    const { products: created, activity: entries } = await productsApi.add(newProducts);
-    setProductList((list) => [...created, ...list]);
-    setActivityLog((log) => [...entries, ...log]);
+  const addProducts = useCallback((newProducts) => {
+    apply((state) => store.addProducts(state, newProducts));
     notify(
-      created.length === 1
-        ? t("toast.added", { name: created[0].name })
-        : t("toast.addedCount", { count: created.length }),
+      newProducts.length === 1
+        ? t("toast.added", { name: newProducts[0].name })
+        : t("toast.addedCount", { count: newProducts.length }),
       "success",
     );
-    return created;
-  }, [notify, t]);
+    return newProducts;
+  }, [apply, notify, t]);
 
-  const deleteProduct = useCallback(async (sku) => {
-    const { sku: deletedSku, activity: entries } = await productsApi.remove(sku);
-    setProductList((list) => list.filter((item) => item.sku !== deletedSku));
-    setActivityLog((log) => [...entries, ...log]);
-    notify(t("toast.deleted", { name: entries[0]?.name ?? deletedSku }), "success");
-  }, [notify, t]);
+  const deleteProduct = useCallback((sku) => {
+    const next = apply((state) => store.deleteProduct(state, sku));
+    notify(t("toast.deleted", { name: next.activity[0].name }), "success");
+  }, [apply, notify, t]);
 
-  const returnProduct = useCallback(async (sku, units, reason) => {
-    const { product, activity: entries } = await productsApi.returnStock(sku, units, reason);
-    setProductList((list) => list.map((item) => (item.sku === product.sku ? product : item)));
-    setActivityLog((log) => [...entries, ...log]);
-    notify(t("toast.returned", { count: units, name: product.name }), "success");
-  }, [notify, t]);
+  const returnProduct = useCallback((sku, units, reason) => {
+    const next = apply((state) => store.returnProduct(state, sku, units, reason));
+    notify(t("toast.returned", { count: units, name: next.activity[0].name }), "success");
+  }, [apply, notify, t]);
 
-  const updateProduct = useCallback(async (sku, changes) => {
-    const { product, activity: entries } = await productsApi.update(sku, changes);
-    setProductList((list) => list.map((item) => (item.sku === product.sku ? product : item)));
-    setActivityLog((log) => [...entries, ...log]);
+  const updateProduct = useCallback((sku, changes) => {
+    const next = apply((state) => store.updateProduct(state, sku, changes));
+    const product = next.products.find((item) => item.sku === sku);
     notify(t("toast.updated", { name: product.name }), "success");
     return product;
-  }, [notify, t]);
+  }, [apply, notify, t]);
 
-  const openRegister = useCallback(async () => {
-    try {
-      setOpenShift(await ordersApi.open());
-      notify(t("toast.registerOpened"), "success");
-    } catch (error) {
-      notify(mapApiError(error, t), "error");
-    }
-  }, [notify, t]);
+  const openRegister = useCallback(() => {
+    apply((state) => store.openRegister(state, signedIn.login));
+    notify(t("toast.registerOpened"), "success");
+  }, [apply, signedIn, notify, t]);
 
-  const closeRegister = useCallback(async () => {
+  const closeRegister = useCallback(() => {
     const takings = openShift ? sessionTotals(openShift).revenue : 0;
     try {
-      setOpenShift(await ordersApi.close());
-      notify(
-        t("toast.registerClosed", { total: formatPrice(takings) }),
-        "success",
-      );
+      apply((state) => store.closeRegister(state, signedIn.login));
+      notify(t("toast.registerClosed", { total: formatPrice(takings) }), "success");
     } catch (error) {
-      notify(mapApiError(error, t), "error");
+      notify(mapError(error, t), "error");
     }
-  }, [notify, t, openShift]);
+  }, [apply, signedIn, notify, t, openShift]);
 
   const [saleLines, setSaleLines] = useState([]);
   const [payment, setPayment] = useState("cash");
@@ -201,52 +145,37 @@ export default function App() {
 
   const clearSale = useCallback(() => setSaleLines([]), []);
 
-  const completeSale = useCallback(
-    async (sold) => {
-      const result = await ordersApi.create(payment, sold);
-      setProductList((list) =>
-        list.map((product) => {
-          const updated = result.products.find((item) => item.sku === product.sku);
-          return updated ? { ...product, stock: updated.stock } : product;
-        }),
-      );
-      if (result.session) setOpenShift(result.session);
-      setActivityLog((log) => [...result.activity, ...log]);
-      setSaleLines([]);
-      notify(
-        t("toast.sold", {
-          count: sold.reduce((units, line) => units + line.qty, 0),
-          total: formatPrice(
-            sold.reduce((sum, line) => sum + line.qty * line.soldFor, 0),
-          ),
-        }),
-        "success",
-      );
-    },
-    [payment, notify, t],
-  );
+  const completeSale = useCallback((sold) => {
+    apply((state) => store.completeSale(state, signedIn, payment, sold));
+    setSaleLines([]);
+    notify(t("toast.sold", {
+      count: sold.reduce((units, line) => units + line.qty, 0),
+      total: formatPrice(sold.reduce((sum, line) => sum + line.qty * line.soldFor, 0)),
+    }), "success");
+  }, [apply, signedIn, payment, notify, t]);
 
-  const addUser = useCallback(async (user) => {
-    const created = await usersApi.add(user);
-    setUserList((list) => [created, ...list]);
-    notify(t("toast.userAdded", { name: created.login }), "success");
-  }, [notify, t]);
+  const addUser = useCallback((user) => {
+    apply((state) => store.addUser(state, user));
+    notify(t("toast.userAdded", { name: user.login }), "success");
+  }, [apply, notify, t]);
 
-  const deleteUser = useCallback(async (login) => {
-    await usersApi.remove(login);
-    setUserList((list) => list.filter((user) => user.login !== login));
+  const deleteUser = useCallback((login) => {
+    apply((state) => store.deleteUser(state, login));
     notify(t("toast.userDeleted", { name: login }), "success");
-  }, [notify, t]);
+  }, [apply, notify, t]);
 
-  const updateAccount = useCallback(
-    async (login, changes) => {
-      const updated = await usersApi.updateSelf(changes);
-      setUserList((list) => list.map((user) => (user.login === login ? updated : user)));
-      if (changes.login && changes.login !== login) session.follow(changes.login);
-      return updated;
-    },
-    [session],
-  );
+  const updateAccount = useCallback((login, changes) => {
+    const next = apply((state) => store.updateAccount(state, login, changes));
+    const updated = next.users.find((user) => user.login === normalizeLogin(changes.login ?? login));
+    if (updated.login !== login) session.follow(updated.login);
+    return updated;
+  }, [apply, session]);
+
+  useEffect(() => {
+    setSaleLines([]);
+    setPayment("cash");
+    setLastScan(null);
+  }, [signedIn?.login]);
 
   useEffect(() => {
     if (!navOpen) return undefined;
@@ -294,10 +223,6 @@ export default function App() {
 
   useBarcodeScanner(onScan, { enabled: Boolean(signedIn) });
 
-  if (!session.authChecked) {
-    return <LoadingScreen />;
-  }
-
   if (!signedIn) {
     return <Login onSignIn={session.signIn} />;
   }
@@ -333,7 +258,7 @@ export default function App() {
           className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6"
         >
           {page === "dashboard" ? (
-            <Dashboard products={productList} activityLog={activityLog} />
+            <Dashboard products={productList} sales={sales} sessions={sessions} activityLog={activityLog} />
           ) : page === "sales" ? (
             <Sales
               products={productList}
@@ -345,7 +270,7 @@ export default function App() {
               onRemove={removeFromSale}
               onClear={clearSale}
               onSell={completeSale}
-              onSellError={(error) => notify(mapApiError(error, t), "error")}
+              onSellError={(error) => notify(mapError(error, t), "error")}
               onReturn={returnProduct}
               barHeight={sidebarFooterHeight || SALE_PANEL_HEIGHT}
               lastScan={lastScan}
@@ -364,15 +289,15 @@ export default function App() {
               onDelete={deleteProduct}
             />
           ) : page === "reports" ? (
-            <Reports />
+            <Reports sales={sales} sessions={sessions} />
           ) : page === "activity" ? (
-            <Activity />
+            <Activity entries={activityLog} />
           ) : page === "users" ? (
             <Users users={userList} onAdd={addUser} onDelete={deleteUser} />
           ) : page === "tools" ? (
             <Tools products={productList} />
           ) : page === "register" ? (
-            <Register users={userList} />
+            <Register users={userList} sessions={sessions} />
           ) : page === "settings" ? (
             <Settings users={userList} onUpdateAccount={updateAccount} />
           ) : (

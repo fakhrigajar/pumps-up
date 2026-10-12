@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { FilterBar } from "../components/FilterBar";
 import { StatTile } from "../components/StatTile";
 import { ChartCard, DataTable } from "../components/charts/ChartCard";
@@ -24,54 +24,21 @@ import {
   formatWeekdayShort,
 } from "../lib/format";
 import { useTranslation } from "../i18n/context";
-import { reports as reportsApi } from "../api/reports";
-import { useAsync } from "../api/useAsync";
+import { selectDashboard } from "../data/dashboard";
 
 const HOUR = (hour) => String(hour).padStart(2, "0");
 
-export function Dashboard({ products, activityLog }) {
+export function Dashboard({ products, sales, sessions, activityLog }) {
   const { t } = useTranslation();
   const [range, setRange] = useState("3m");
 
   const period = dateRanges.find((item) => item.id === range) ?? dateRanges[0];
   const monthsBack = period.monthsBack;
 
-  const { data, loading, error, reload } = useAsync(
-    () => reportsApi.dashboard(monthsBack),
-    [monthsBack],
-    "reports.dashboard",
+  const data = useMemo(
+    () => selectDashboard(products, sales, sessions, monthsBack),
+    [products, sales, sessions, monthsBack],
   );
-
-  // This report is the heaviest request the app makes, so it is the one most
-  // likely to time out at the proxy. Without this branch a failed load left
-  // the page on "Loading…" forever, with nothing in the UI to say it had
-  // failed and no way to ask for it again.
-  if (error && !data) {
-    return (
-      <div className="space-y-6">
-        <FilterBar range={range} onRangeChange={setRange} />
-        <div className="px-3 py-16 text-center">
-          <p className="text-[13px] text-ink-3">{t("common.loadFailed")}</p>
-          <button
-            type="button"
-            onClick={reload}
-            className="mt-3 rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-[13px] font-medium text-ink-2 hover:text-ink-1"
-          >
-            {t("common.retry")}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (loading || !data) {
-    return (
-      <div className="space-y-6">
-        <FilterBar range={range} onRangeChange={setRange} />
-        <p className="px-3 py-16 text-center text-[13px] text-ink-3">{t("common.loading")}</p>
-      </div>
-    );
-  }
 
   const {
     kpis,

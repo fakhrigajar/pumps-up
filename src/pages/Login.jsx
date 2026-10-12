@@ -35,7 +35,7 @@ export function Login({ onSignIn }) {
         className="flex flex-1 items-start justify-center px-4 pb-16 pt-[6vh] sm:pt-[10vh]"
       >
         <div className="w-full max-w-[380px]">
-          <Logo className="mx-auto h-6 w-auto text-ink-1" />
+          <Logo className="mx-auto h-10 w-auto text-ink-1" />
 
           <h1 className="mt-7 text-center text-[19px] font-semibold tracking-tight text-ink-1">
             {t("login.title")}

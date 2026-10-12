@@ -1,3 +1,4 @@
+import { SKU_PREFIX } from "../../brand.js";
 import { useId, useState } from 'react'
 import { Modal, ModalFooter } from '../ui/Modal'
 import { Button } from '../ui/Button'
@@ -19,7 +20,7 @@ import {
   sizedSku,
 } from '../../data/erp'
 import { useTranslation } from '../../i18n/context'
-import { mapApiError } from '../../api/errors'
+import { mapError } from '../../lib/errors'
 import { usePending } from '../../lib/usePending'
 
 function Field({ label, hint, children }) {
@@ -191,7 +192,7 @@ export function ProductFormDialog({
   const baseSku = editing
     ? product.sku
     : showColors
-      ? `PU${productCode(form.name)}`
+      ? `${SKU_PREFIX}${productCode(form.name)}`
       : bagSkuStem(form.name, bagDigits)
   const rowCount = colors.reduce(
     (total, color) => total + SHOE_SIZES.filter((size) => Number(color.sizes[size]) > 0).length,
@@ -267,7 +268,7 @@ export function ProductFormDialog({
       try {
         return await runSave(() => onSubmit(rows))
       } catch (err) {
-        return setError(mapApiError(err, t))
+        return setError(mapError(err, t))
       }
     }
 
@@ -302,7 +303,7 @@ export function ProductFormDialog({
         },
       ]))
     } catch (err) {
-      return setError(mapApiError(err, t))
+      return setError(mapError(err, t))
     }
   }
 
@@ -582,7 +583,7 @@ function ReturnForm({ product, onBack, onCancel, onConfirm }) {
     try {
       return await runReturn(() => onConfirm(units, trimmedReason))
     } catch (err) {
-      return setError(mapApiError(err, t))
+      return setError(mapError(err, t))
     }
   }
 

@@ -4,8 +4,10 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="application-name" content="ModShop" />
+    <meta name="description" content="ModShop point of sale, inventory, sales reports, and store management." />
     <meta name="theme-color" content="#f9f9f7" />
-    <title>Pumps Up — ERP</title>
+    <title>ModShop</title>
     <script>
       // Apply the stored theme before first paint so a dark-mode reload never
       // flashes the light surface.
@@ -13,7 +15,7 @@
         try {
           document.documentElement.classList.toggle(
             'dark',
-            localStorage.getItem('pumpsup.theme') === 'dark',
+            localStorage.getItem('modshop.theme') === 'dark',
           )
         } catch (e) {
           /* private mode / storage disabled — fall back to light */

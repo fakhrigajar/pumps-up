@@ -1,37 +1,16 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { LabelTemplateContext } from "./context";
-import { DEFAULT_TEMPLATE, normalizeTemplate } from "../lib/labelTemplate";
-import { settings as settingsApi } from "../api/settings";
+import { defaultLabelTemplate } from "../data.js";
+import { normalizeTemplate } from "../lib/labelTemplate";
 
 export function LabelTemplateProvider({ children }) {
-  const [template, setTemplate] = useState(DEFAULT_TEMPLATE);
-
-  useEffect(() => {
-    let cancelled = false;
-    settingsApi
-      .getLabelTemplate()
-      .then((data) => {
-        if (!cancelled) setTemplate(normalizeTemplate(data));
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const save = useCallback(async (next) => {
-    const clean = normalizeTemplate(
-      await settingsApi.saveLabelTemplate(normalizeTemplate(next)),
-    );
+  const [template, setTemplate] = useState(() => normalizeTemplate(defaultLabelTemplate));
+  const save = useCallback((next) => {
+    const clean = normalizeTemplate(next);
     setTemplate(clean);
     return clean;
   }, []);
 
   const value = useMemo(() => ({ template, save }), [template, save]);
-
-  return (
-    <LabelTemplateContext.Provider value={value}>
-      {children}
-    </LabelTemplateContext.Provider>
-  );
+  return <LabelTemplateContext.Provider value={value}>{children}</LabelTemplateContext.Provider>;
 }

@@ -1,4 +1,4 @@
-import { minutesFromClock } from "../lib/storeSettings";
+import { minutesFromClock } from "../lib/storeSettings.js";
 
 export const TRADING_OPEN_HOUR = 9;
 export const TRADING_CLOSE_HOUR = 21;
@@ -74,4 +74,59 @@ export function sessionKey(session) {
     session._id ??
     `${session.cashier}-${session.date}-${session.openedAt}`
   );
+}
+
+export function selectHeatmap(sessions, { start, end, groupBy = "day" }) {
+  const inRange = sessions.filter((session) => session.date >= start && session.date <= end);
+
+  const hours = tradingHours(inRange);
+  const buckets = new Map();
+
+  for (const session of inRange) {
+    const key = groupBy === "cashier" ? session.cashier : session.date;
+    const bucket = buckets.get(key) ?? hours.map((hour) => ({ hour, orders: 0, revenue: 0, units: 0 }));
+
+    for (const order of session.orders) {
+      const index = hours.indexOf(new Date(order.at).getHours());
+      if (index < 0) continue;
+      bucket[index].orders += 1;
+      bucket[index].units += orderUnits(order);
+      bucket[index].revenue += orderRevenue(order);
+    }
+
+    buckets.set(key, bucket);
+  }
+
+  const keys = [...buckets.keys()].sort();
+  return {
+    hours,
+    rows: (groupBy === "day" ? keys.reverse() : keys).map((key) => ({
+      id: key,
+      key,
+      cells: buckets.get(key),
+    })),
+  };
+}
+
+function tradingHours(sessions) {
+  let first = TRADING_OPEN_HOUR;
+  let last = TRADING_CLOSE_HOUR;
+
+  for (const session of sessions) {
+    first = Math.min(first, new Date(session.openedAt).getHours());
+    const closed = session.closedAt ?? Date.now();
+    last = Math.max(last, new Date(closed).getHours());
+  }
+
+  return Array.from({ length: last - first + 1 }, (_, index) => first + index);
+}
+
+export function countOrders(sales, start, end) {
+  const orders = new Set();
+  for (const sale of sales) {
+    if (sale.date >= start && sale.date <= end) {
+      orders.add(sale.orderId ?? sale.id);
+    }
+  }
+  return orders.size;
 }

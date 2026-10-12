@@ -1,6 +1,6 @@
-# Pumps Up — ERP Dashboard
+# ModShop — Store Management
 
-An operations dashboard for the Pumps Up ERP. React (JavaScript, no TypeScript),
+An operations dashboard for the ModShop. React (JavaScript, no TypeScript),
 Vite, and Tailwind CSS 3.4, with a full light/dark theme.
 
 ## Running it
@@ -10,12 +10,29 @@ npm install
 npm run dev      # http://localhost:5173
 npm run build    # production bundle into dist/
 npm run lint
+npm test         # local data and checkout checks
 ```
+
+## Default data
+
+The app runs entirely in the browser without API requests or a backend.
+[src/data.js](src/data.js) contains the default users, product catalogue,
+sales history, register sessions, activity, store settings, and label design.
+Edit that file to change the starting data. Sample history uses dates relative
+to today so reports open with data.
+
+Sign in with `admin` / `admin` (admin), `aysel` / `kassa` (cashier),
+or `rauf` / `kassa` (cashier). These demo credentials are in `defaultUsers`.
+
+Sales, inventory, accounts, activity, settings, and label changes stay in local
+React state while navigating. Reloading restores the defaults. The signed-in
+login is remembered for the current tab in `sessionStorage`; theme and language
+preferences continue to use `localStorage`.
 
 ## Theming
 
 Two states — **light** and **dark** — from the switch in the top bar. The choice
-persists in `localStorage` under `pumpsup.theme`, and an inline script in
+persists in `localStorage` under `modshop.theme`, and an inline script in
 [index.html](index.html) applies it before first paint so a dark-mode reload
 never flashes white. Light is the default when nothing is stored; the OS setting
 is not consulted.
@@ -29,11 +46,16 @@ a literal color and nothing needs a re-render on theme change.
 
 ### The logo
 
-The wordmark in [src/components/Logo.jsx](src/components/Logo.jsx) is filled with
-`currentColor` and rendered inside `text-ink-1`, which is `#0b0b0b` in light mode
-and `#ffffff` in dark — black on light, white on dark, with no duplicate asset.
-`LogoMark` is the same path cropped to its leading "P" for the mobile bar and the
-favicon.
+The original ModShop logo combines an M shopping-bag monogram with a custom
+geometric wordmark. Every shape is a vector path, so the logo needs no font
+or image download and stays crisp on screen and printed labels.
+
+[src/components/Logo.jsx](src/components/Logo.jsx) provides the full logo and
+compact mark from [src/brand.js](src/brand.js). Both inherit `currentColor`
+for light and dark themes. The same logo is used on sign-in, navigation,
+and the default label design. Reusable SVGs are in
+[public/modshop-logo.svg](public/modshop-logo.svg) and
+[public/modshop-mark.svg](public/modshop-mark.svg); the mark is also the favicon.
 
 ## Charts
 
@@ -60,7 +82,7 @@ The charts are hand-drawn SVG (no charting dependency) in
 
 A globe button in the top bar switches between **English**, **Русский** and
 **Azərbaycanca**. The choice persists in `localStorage` under
-`pumpsup.language` and sets `<html lang>`.
+`modshop.language` and sets `<html lang>`.
 
 `t(key, vars)` comes from [useTranslation](src/i18n/context.js); strings live in
 [src/i18n/translations.js](src/i18n/translations.js), one flat dictionary per
@@ -97,7 +119,7 @@ gutter clips the longer one.
 
 [src/pages/Dashboard.jsx](src/pages/Dashboard.jsx) reads only real state —
 `products`, `sales`, the register `sessions`, the accounts and the activity
-log, all lifted in [App.jsx](src/App.jsx) — never generated data. Its
+log, held in [App.jsx](src/App.jsx) and initialized from [src/data.js](src/data.js). Its
 selectors live in [src/data/dashboard.js](src/data/dashboard.js).
 
 It is built in four bands, each with a heading saying which question the next
@@ -117,7 +139,7 @@ the clock lives on the shift.
 
 - **KPI tiles** — Revenue, Products sold, Gross margin, Average order value —
   compare the current half of the selected period against the half before it
-  (`selectRealKpis` in [src/data/erp.js](src/data/erp.js), built on
+  (`selectRealKpis` in [src/data/dashboard.js](src/data/dashboard.js), built on
   `splitRangeInHalf` in [src/lib/dates.js](src/lib/dates.js)).
 - **Revenue and profit** plots both day by day on **one** axis
   ([TrendLines](src/components/charts/TrendLines.jsx)). They share it because
@@ -169,8 +191,7 @@ the clock lives on the shift.
 - **Activity log** records one entry per product-level action, this session
   only, newest first — add, edit, delete, return, sell — each a plain
   statement ("Product was sold.") plus which product and when. It is
-  in-memory session state seeded empty, deliberately: an audit log that opens
-  with invented history would defeat its own purpose. The panel shows the
+  local state initialized with sample sales activity from `data.js`. The panel shows the
   newest eight; [Activity](#activity) under Back office is the full list.
 
 ## The product list
@@ -198,8 +219,8 @@ translation never leaves a gap.
 ## Inventory
 
 [src/pages/Inventory.jsx](src/pages/Inventory.jsx) lists the product catalogue —
-name, selling price, stock — from `products` in
-[src/data/erp.js](src/data/erp.js), where each record carries a unique `sku`,
+name, selling price, stock — from `defaultProducts` in
+[src/data.js](src/data.js), where each record carries a unique `sku`,
 `name`, `category`, `stock`, `purchasePrice` and `sellingPrice`; a Shoe record
 also carries `color` and `size`. The table carries **Add product**, **Edit
 product** and **Return product** in its header:
@@ -217,18 +238,18 @@ product** and **Return product** in its header:
   two colors' stock moves independently. Choosing **Bag** hides the section
   and restores the plain stock field for a single row, since bags come in
   neither colors nor sizes here.
-- **Ids are generated, never typed.** The format is `PU` + the first 3
+- **Ids are generated, never typed.** The format is `MS` + the first 3
   letters of the product name + a 3-letter color code + a random 4-digit
   number, with the stocked size appended for a Shoe: "Nike Air Force", Blue,
-  size 37 → `PUNIKBLU192337` (`colorSkuStem` + `sizedSku` in
+  size 37 → `MSNIKBLU192337` (`colorSkuStem` + `sizedSku` in
   [src/data/erp.js](src/data/erp.js)). **The digits are drawn per variant** —
   one fresh number for every color *and* size — so size 38 of that same
-  colour is `PUNIKBLU850438`, not `192338`. Every variant is its own listing
+  colour is `MSNIKBLU850438`, not `192338`. Every variant is its own listing
   with its own stock and its own label, so no id is reachable by doing
   arithmetic on another one. A Bag has no color or size, so its id stops
   after the digits (`productCode` + `randomDigits4` via `bagSkuStem`:
-  `PUEVE4821`). Adding a Shoe, the form shows how far the id is decided — the
-  shared `PUNIKBLU` prefix, with the number per size still to come; a Bag's
+  `MSEVE4821`). Adding a Shoe, the form shows how far the id is decided — the
+  shared `MSNIKBLU` prefix, with the number per size still to come; a Bag's
   whole id is shown, since nothing about it is left to draw. `pickDigits`
   redraws on collision against both the catalogue and the ids minted earlier
   in the same submit — two colors *can* share a code ("Grey" and "Gray" are
@@ -288,7 +309,7 @@ seeded FNV-1a passes into digits. Derived because it is then a pure function
 of the id — a product created today and the same product after a reload carry
 the same number with no field to keep in sync, and a label printed months ago
 still points at the row it came from. It has to be digits at all because
-**EAN-13 encodes nothing else**, and a product id like `PUNIKBLU192337` is
+**EAN-13 encodes nothing else**, and a product id like `MSNIKBLU192337` is
 mostly letters. Two hash passes rather than one: a single 32-bit pass is about
 9 digits of spread, and a label this long deserves the room.
 
@@ -444,10 +465,9 @@ time, so aligning left never also moves something up. They are actions rather
 than a setting — an element's position is still the two numbers above the row,
 and the buttons only write what an edge or a centre works out to.
 
-- **Save** writes the design to `localStorage` through
-  [LabelTemplateProvider](src/labels/LabelTemplateProvider.jsx), which is what
-  makes saved mean saved: it outlives the tab it was drawn in, so a shop sets
-  its label up once. Until then the saved design is untouched and **Discard
+- **Save** applies the design to local state through
+  [LabelTemplateProvider](src/labels/LabelTemplateProvider.jsx). Reloading
+  restores the default design from `data.js`. Until then the saved design is untouched and **Discard
   changes** is the draft thrown away; **Reset to default** goes back to the
   stack the app shipped with, which is still only a draft until it is saved.
 - **Everything read back is treated as untrusted.** `normalizeTemplate` rebuilds
@@ -475,8 +495,8 @@ user list on every render. That is what keeps a session honest: an account
 edited on the users screen is immediately the account signed in, and one deleted
 mid-session resolves to nobody, which drops that browser back to the sign-in
 page rather than leaving a ghost holding a deleted user's permissions. The login
-is remembered in local storage the way the theme is, so a refresh does not sign
-anybody out.
+is remembered in `sessionStorage` for the current tab. A refresh restores the
+default accounts, so a renamed or newly created account must be created again.
 
 ### Permissions
 
@@ -652,7 +672,7 @@ regardless of how the period was chosen, and only the button label cares which
 mode produced it.
 
 Sales live in `App.jsx` state alongside the catalogue, seeded from ~3 months of
-generated history in [src/data/erp.js](src/data/erp.js) so the calendar has a
+generated history in [src/data.js](src/data.js) so the calendar has a
 past to page through. A sale completed in the app prepends to it and shows up
 under today immediately.
 
@@ -738,11 +758,8 @@ on every line here only crowds out what the entry is actually saying.
 The dashboard panel and the topbar bell show the newest few of the same
 `activityLog` state; this is the full list, not a second one.
 
-Relative times tick once a minute while the page is open — a log left on screen
-would otherwise keep insisting an hour-old entry was "1 minute ago". The empty
-state says outright that the log is session-only, rather than implying a history
-it never had: like the panel, it starts empty on purpose, since an audit log
-that opens with invented entries would defeat its own purpose.
+Relative times tick once a minute while the page is open. The log starts with
+sample sales activity from `data.js` and records local actions until reload.
 
 One entry is recorded per *listing* affected, so a Shoe added across colors and
 sizes logs one line per row it created. Each entry's id is assigned before the
@@ -754,8 +771,8 @@ give every entry in the batch the same id.
 
 [src/pages/Users.jsx](src/pages/Users.jsx) (the **Users** module, under Back
 office) is who can sign in. A record is a `login`, a `password`, a `role` and
-the date it was added — [src/data/users.js](src/data/users.js) holds the seed
-accounts and the rules. There are two roles for now: **Admin**, which reaches
+the date it was added — [src/data.js](src/data.js) holds the seed
+accounts and [src/data/users.js](src/data/users.js) holds the validation rules. There are two roles for now: **Admin**, which reaches
 every screen including this one, and **Cashier**, which is the till — sales and
 the product list. The role a row holds is shown as a badge and picked, with its
 description next to it, when the account is created.
@@ -807,12 +824,10 @@ does either as well. A half-typed time is not a time, so the shop keeps the
 last one it was actually set to while the field goes on showing whatever is
 being typed.
 
-Both apply the moment they change, the way the theme and the language do —
-there is one right answer and no draft of it worth keeping — and both persist
-in local storage under `pumpsup.settings`. Anything read back from there is
-treated as a suggestion and normalized: a blob written by an older version, or
-edited by hand, must not be able to hand the app a currency `Intl` cannot
-format or a closing time that is not a time.
+Currency and working hours apply when the settings form is saved. They stay
+in local state until reload, then restore the defaults from `data.js`. Values
+are normalized before use so the app always receives a supported currency and
+valid clock times.
 
 **Username** and **Password** are the opposite kind of setting: they are forms,
 submitted and answered, because a half-typed password is not a password. The
@@ -831,13 +846,17 @@ src/
   App.jsx                 shell: sidebar + topbar + page, product + sales state
   navigation.js           nav model, and which roles may open each page
   auth/                   who is signed in
-  data/register.js        register sessions: shifts, orders, seeded history
+  data.js                 all default data and sample history
+  data/store.js           local inventory, sales, register, and account actions
+  data/useAppData.js      shared local state
+  data/reports.js         sales ledger selectors
+  data/register.js        register totals and report heatmaps
   data/dashboard.js       what the dashboard reads the shop by
   theme/                  ThemeProvider + useTheme
   i18n/                   LanguageProvider, dictionaries, az format overrides
   labels/                 LabelTemplateProvider + useLabelTemplate
   settings/               StoreSettingsProvider + useStoreSettings
-  data/erp.js             seeded demo dataset, sales history and selectors
+  data/erp.js             catalogue helpers, SKU generation and product search
   data/users.js           accounts, roles and the rules a login must satisfy
   lib/                    formatting, calendar dates, axis ticks, zip/exporters
   lib/barcode.js          EAN-13 encoding + the label number derived from an id
@@ -857,7 +876,7 @@ The Dashboard's Period filter sits above everything it scopes; see
 
 ## Notes
 
-`src/data/erp.js` is demo data generated from a fixed seed, so figures stay
+`src/data.js` contains demo data generated from a fixed seed, so figures stay
 stable across renders and theme changes — including each seeded product's id,
 built by the same generator the Add form uses but fed a seeded random source
 instead of `Math.random`, so the catalogue's ids don't reshuffle on reload.

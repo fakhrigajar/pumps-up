@@ -1,3 +1,4 @@
+import { APP_NAME } from "../brand.js";
 import { useMemo, useState } from "react";
 import { Card } from "../components/ui/Card";
 import { CalendarPicker } from "../components/ui/CalendarPicker";
@@ -14,25 +15,18 @@ import {
   formatSelection,
 } from "../lib/format";
 import { useTranslation } from "../i18n/context";
-import { reports as reportsApi } from "../api/reports";
-import { useAsync } from "../api/useAsync";
+import { selectLedger } from "../data/reports";
 
-export function Reports() {
+export function Reports({ sales, sessions }) {
   const { t, language } = useTranslation();
   const [selection, setSelection] = useState(() => daySelection(todayIso()));
   const [grouping, setGrouping] = useState("day");
   const [metric, setMetric] = useState("revenue");
 
-  const { data } = useAsync(
-    () => reportsApi.ledger(selection.start, selection.end, grouping),
-    [selection.start, selection.end, grouping],
-    "reports.ledger",
+  const { heatmap, rows, totals, orderCount } = useMemo(
+    () => selectLedger(sales, sessions, selection, grouping),
+    [sales, sessions, selection, grouping],
   );
-
-  const heatmap = data?.heatmap ?? { hours: [], rows: [] };
-  const rows = data?.rows ?? [];
-  const totals = data?.totals ?? { sales: 0, profit: 0, units: 0 };
-  const orderCount = data?.orderCount ?? 0;
 
   const heatmapRows = useMemo(
     () =>
@@ -72,13 +66,13 @@ export function Reports() {
   function buildDoc() {
     const period = formatSelection(selection);
     return {
-      fileBase: `${t("rep.fileName")}-${
+      fileBase: `${APP_NAME}-${t("rep.fileName")}-${
         selection.start === selection.end
           ? selection.start
           : `${selection.start}_${selection.end}`
       }`,
       sheetName: t("rep.title"),
-      title: t("rep.title"),
+      title: `${APP_NAME} — ${t("rep.title")}`,
       subtitle: `${period} · ${t("rep.count", { count: rows.length })}`,
       lang: language,
       columns: [

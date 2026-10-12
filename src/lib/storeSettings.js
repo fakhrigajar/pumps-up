@@ -1,3 +1,5 @@
+import { defaultSettings as DEFAULT_SETTINGS } from "../data.js";
+
 export const SETTINGS_VERSION = 1;
 
 export const CURRENCIES = [
@@ -9,12 +11,7 @@ export const CURRENCIES = [
   { code: "RUB", nameKey: "cur.RUB" },
 ];
 
-export const DEFAULT_SETTINGS = {
-  version: SETTINGS_VERSION,
-  currency: "AZN",
-  opensAt: "09:00",
-  closesAt: "21:00",
-};
+export { DEFAULT_SETTINGS };
 
 const CLOCK_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
 

@@ -13,7 +13,7 @@ import { filterProducts } from "../data/erp";
 import { useLabelTemplate } from "../labels/context";
 import { useTranslation } from "../i18n/context";
 import { useToast } from "../toast/context";
-import { mapApiError } from "../api/errors";
+import { mapError } from "../lib/errors";
 
 export function Inventory({ products, onAdd, onUpdate, onDelete }) {
   const { t } = useTranslation();
@@ -194,7 +194,7 @@ export function Inventory({ products, onAdd, onUpdate, onDelete }) {
               retagChecked(editing.sku);
               closeDialog();
             } catch (error) {
-              notify(mapApiError(error, t), "error");
+              notify(mapError(error, t), "error");
             }
           }}
         />

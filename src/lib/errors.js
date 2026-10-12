@@ -12,11 +12,9 @@ const CODE_KEYS = {
   selling_invalid: "err.selling",
   units_invalid: "err.units",
   reason_required: "err.reason",
-  network_error: "err.generic",
-  internal_error: "err.generic",
 };
 
-export function mapApiError(error, t) {
+export function mapError(error, t) {
   const key = CODE_KEYS[error?.code];
   if (key) return t(key);
   return error?.message || t("err.generic");
